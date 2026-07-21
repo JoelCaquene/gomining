@@ -1,0 +1,687 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Central de Mineração - Níveis{% endblock %}
+
+{% block content %}
+<div class="level-container">
+    
+    {# Top Navigation #}
+    <div class="top-navigation">
+        <a href="{% url 'home' %}" class="back-link">
+            <i class="fas fa-chevron-left"></i> VOLTAR
+        </a>
+        <h1 class="main-title"><i class="fas fa-server"></i> CENTRAL DE MINERAÇÃO</h1>
+    </div>
+
+    {# Abas de Navegação Estilo Cripto #}
+    <div class="plan-tabs">
+        <button type="button" class="tab-btn active" onclick="switchTab('long-term')">
+            <i class="fas fa-layer-group"></i> Longo Prazo
+        </button>
+        <button type="button" class="tab-btn" onclick="switchTab('short-term')">
+            <i class="fas fa-bolt"></i> Curto Prazo
+        </button>
+        <button type="button" class="tab-btn" onclick="switchTab('activities')">
+            <i class="fas fa-network-wired"></i> Actividades
+        </button>
+    </div>
+
+    {# SEÇÃO: LONGO PRAZO #}
+    <div id="long-term" class="tab-content active-content">
+        <div class="level-stack">
+            {% for level in long_term_levels %}
+            <div class="level-card {% if level.is_active %}active-glow{% endif %}">
+                <div class="card-header">
+                    <div class="level-badge text-longo">
+                        <i class="fas fa-microchip"></i>
+                        <span>LONGO: NÍVEL {{ level.name }}</span>
+                    </div>
+                    {% if level.is_active %}
+                        <div class="status-tag active">ACTIVO ({{ level.active_count }}x)</div>
+                    {% endif %}
+                </div>
+
+                <div class="card-body">
+                    <div class="crypto-limit-info">
+                        <i class="fas fa-info-circle"></i> Limite: Pode ser activo no máximo 3 vezes
+                    </div>
+
+                    <div class="data-grid">
+                        <div class="data-box">
+                            <span class="data-label"><i class="fas fa-wallet"></i> Depósito</span>
+                            <span class="data-value highlight-gold">KZ {{ level.deposit_value }}</span>
+                        </div>
+                        <div class="data-box">
+                            <span class="data-label"><i class="fas fa-coins"></i> Diário</span>
+                            <span class="data-value highlight-green">KZ {{ level.daily_gain }}</span>
+                        </div>
+                        <div class="data-box">
+                            <span class="data-label"><i class="fas fa-calendar-alt"></i> Mensal</span>
+                            <span class="data-value text-success">KZ {{ level.monthly_gain }}</span>
+                        </div>
+                        <div class="data-box">
+                            <span class="data-label"><i class="fas fa-globe"></i> Anual</span>
+                            <span class="data-value text-success">KZ {{ level.yearly_gain }}</span>
+                        </div>
+                        <div class="data-box grid-col-span-2">
+                            <span class="data-label"><i class="fas fa-history"></i> Ciclo</span>
+                            <span class="data-value">{{ level.cycle_days }} Dias <small class="text-alert">(Retido até o Fim)</small></span>
+                        </div>
+                    </div>
+
+                    {# Monitor de Ciclos Ativos do Utilizador com Acumulação em Tempo Real #}
+                    {% if level.active_investments %}
+                        <div class="investment-monitor">
+                            <p class="monitor-title"><i class="fas fa-terminal"></i> Hardwares em Operação:</p>
+                            {% for inv in level.active_investments %}
+                                <div class="monitor-row real-time-ticker" 
+                                     data-base-profit="{{ inv.accumulated_profit_base }}" 
+                                     data-daily-gain="{{ level.daily_gain }}"
+                                     data-seconds-passed="{{ inv.seconds_passed_today }}">
+                                    <div class="monitor-info-block">
+                                        <span class="day-indicator">Dia {{ inv.days_passed }}/{{ level.cycle_days }}</span>
+                                        <span class="accumulated text-realtime">Acumulado: KZ <span class="ticker-value">0.00</span></span>
+                                    </div>
+                                    <div class="crypto-timer">
+                                        <i class="fas fa-clock"></i> <span class="countdown-timer" data-seconds="{{ inv.remaining_seconds|default:86400 }}">24:00:00</span>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="card-footer">
+                    <form method="post" action="{% url 'nivel' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="level_id" value="{{ level.id }}">
+                        <button type="submit" class="invest-button bg-longo">
+                            INICIAR MINERAÇÃO <i class="fas fa-plug"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% empty %}
+                <p class="empty-msg">Nenhum hardware de longo prazo configurado.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    {# SEÇÃO: CURTO PRAZO #}
+    <div id="short-term" class="tab-content">
+        <div class="level-stack">
+            {% for level in short_term_levels %}
+            <div class="level-card {% if level.is_active %}active-glow{% endif %} {% if level.is_locked %}card-disabled{% endif %}">
+                <div class="card-header">
+                    <div class="level-badge text-curto">
+                        <i class="fas fa-cube"></i>
+                        <span>CURTO: NÍVEL {{ level.name }}</span>
+                    </div>
+                    {% if level.is_locked %}
+                        <div class="status-tag locked"><i class="fas fa-lock"></i> BLOQUEADO</div>
+                    {% elif level.is_active %}
+                        <div class="status-tag active">ACTIVO ({{ level.active_count }}x)</div>
+                    {% endif %}
+                </div>
+
+                <div class="card-body">
+                    {% if level.is_locked %}
+                        <div class="lock-overlay-msg">
+                            <i class="fas fa-shield-alt"></i> Requer Plano de Longo Prazo Nível {{ level.name }} Activo para habilitar.
+                        </div>
+                    {% endif %}
+                    
+                    <div class="crypto-limit-info">
+                        <i class="fas fa-info-circle"></i> Limite: Pode ser activo no máximo 3 vezes
+                    </div>
+
+                    <div class="data-grid">
+                        <div class="data-box">
+                            <span class="data-label"><i class="fas fa-wallet"></i> Depósito</span>
+                            <span class="data-value highlight-gold">KZ {{ level.deposit_value }}</span>
+                        </div>
+                        <div class="data-box">
+                            <span class="data-label"><i class="fas fa-bolt"></i> Diário</span>
+                            <span class="data-value highlight-green">KZ {{ level.daily_gain }}</span>
+                        </div>
+                        <div class="data-box">
+                            <span class="data-label"><i class="fas fa-calendar-check"></i> Ciclo</span>
+                            <span class="data-value">{{ level.cycle_days }} Dias</span>
+                        </div>
+                        <div class="data-box">
+                            <span class="data-label"><i class="fas fa-hand-holding-usd"></i> Rendimento</span>
+                            <span class="data-value highlight-blue">Disponível Diário</span>
+                        </div>
+                    </div>
+
+                    {% if level.active_investments %}
+                        <div class="investment-monitor">
+                            <p class="monitor-title"><i class="fas fa-bolt"></i> Fluxos Rápidos Activos:</p>
+                            {% for inv in level.active_investments %}
+                                <div class="monitor-row real-time-ticker"
+                                     data-base-profit="{{ inv.accumulated_profit_base }}" 
+                                     data-daily-gain="{{ level.daily_gain }}"
+                                     data-seconds-passed="{{ inv.seconds_passed_today }}">
+                                    <div class="monitor-info-block">
+                                        <span class="day-indicator">Dia {{ inv.days_passed }}/{{ level.cycle_days }}</span>
+                                        <span class="accumulated-ready text-realtime">Creditado: KZ <span class="ticker-value">0.00</span></span>
+                                    </div>
+                                    <div class="crypto-timer">
+                                        <i class="fas fa-clock"></i> <span class="countdown-timer" data-seconds="{{ inv.remaining_seconds|default:86400 }}">24:00:00</span>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="card-footer">
+                    <form method="post" action="{% url 'nivel' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="level_id" value="{{ level.id }}">
+                        <button type="submit" class="invest-button bg-curto" {% if level.is_locked %}disabled{% endif %}>
+                            {% if level.is_locked %}BLOQUEADO SEGURANÇA{% else %}LIGAR MINERAÇÃO RÁPIDA <i class="fas fa-angle-right"></i>{% endif %}
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% empty %}
+                <p class="empty-msg">Nenhum hardware de curto prazo configurado.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    {# SEÇÃO: ACTIVIDADES #}
+    <div id="activities" class="tab-content">
+        <div class="level-stack">
+            {% for level in activity_levels %}
+            <div class="level-card {% if level.is_active %}active-glow{% endif %} {% if level.is_locked %}card-disabled{% endif %}">
+                <div class="card-header">
+                    <div class="level-badge text-actividade">
+                        <i class="fas fa-atom"></i>
+                        <span>ACTIVIDADE: NÍVEL {{ level.name }}</span>
+                    </div>
+                    {% if level.is_locked %}
+                        <div class="status-tag locked"><i class="fas fa-lock"></i> BLOQUEADO</div>
+                    {% elif level.is_active %}
+                        <div class="status-tag active">ACTIVO ({{ level.active_count }}x)</div>
+                    {% endif %}
+                </div>
+
+                <div class="card-body">
+                    {% if level.is_locked %}
+                        <div class="lock-overlay-msg">
+                            <i class="fas fa-exclamation-triangle"></i> Requer Longo e Curto do Nível {{ level.name }} activos simultaneamente.
+                        </div>
+                    {% endif %}
+                    
+                    <div class="crypto-limit-info">
+                        <i class="fas fa-info-circle"></i> Limite: Pode ser activo no máximo 3 vezes
+                    </div>
+
+                    <div class="data-grid">
+                        <div class="data-box">
+                            <span class="data-label"><i class="fas fa-wallet"></i> Depósito</span>
+                            <span class="data-value highlight-gold">KZ {{ level.deposit_value }}</span>
+                        </div>
+                        <div class="data-box">
+                            <span class="data-label"><i class="fas fa-chart-line"></i> Total</span>
+                            <span class="data-value highlight-blue">KZ {{ level.total_gain }}</span>
+                        </div>
+                        <div class="data-box grid-col-span-2">
+                            <span class="data-label"><i class="fas fa-hourglass-half"></i> Ciclo</span>
+                            <span class="data-value">{{ level.cycle_days }} Dias <small class="text-alert">(Fim do Ciclo)</small></span>
+                        </div>
+                    </div>
+
+                    {% if level.active_investments %}
+                        <div class="investment-monitor">
+                            <p class="monitor-title"><i class="fas fa-chart-network"></i> Pools Especiais:</p>
+                            {% for inv in level.active_investments %}
+                                <div class="monitor-row real-time-ticker-activity"
+                                     data-base-profit="{{ inv.accumulated_profit_base }}"
+                                     data-total-gain="{{ level.total_gain }}"
+                                     data-total-seconds="{{ inv.total_cycle_seconds }}"
+                                     data-elapsed-seconds="{{ inv.total_elapsed_seconds }}">
+                                    <div class="monitor-info-block">
+                                        <span class="day-indicator">Dia {{ inv.days_passed }}/{{ level.cycle_days }}</span>
+                                        <span class="accumulated text-realtime">Estimado: KZ <span class="ticker-value">0.00</span></span>
+                                    </div>
+                                    <div class="crypto-timer">
+                                        <i class="fas fa-clock"></i> <span class="countdown-timer" data-seconds="{{ inv.remaining_seconds|default:86400 }}">24:00:00</span>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="card-footer">
+                    <form method="post" action="{% url 'nivel' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="level_id" value="{{ level.id }}">
+                        <button type="submit" class="invest-button bg-actividade" {% if level.is_locked %}disabled{% endif %}>
+                            {% if level.is_locked %}BLOQUEADO POOL{% else %}ENTRAR NA POOL <i class="fas fa-rss"></i>{% endif %}
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% empty %}
+                <p class="empty-msg">Nenhuma pool promocional activa.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<style>
+    html, body {
+        max-width: 100%;
+        overflow-x: hidden;
+        background: radial-gradient(circle at top, #060d1a 0%, #02050a 100%) !important;
+        margin: 0;
+        padding: 0;
+        font-family: 'Inter', sans-serif;
+        color: #e2e8f0;
+    }
+
+    .level-container {
+        width: 100%;
+        max-width: 440px;
+        margin: 0 auto;
+        padding: 20px 14px 100px 14px;
+        box-sizing: border-box;
+    }
+
+    .top-navigation {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-bottom: 20px;
+    }
+
+    .back-link {
+        color: #00b4d8;
+        text-decoration: none;
+        font-size: 11px;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        letter-spacing: 0.5px;
+    }
+
+    .main-title {
+        font-size: 18px;
+        font-weight: 900;
+        letter-spacing: 0.5px;
+        color: #ffffff;
+        margin: 0;
+        text-shadow: 0 0 10px rgba(0, 180, 216, 0.2);
+    }
+
+    .plan-tabs {
+        display: flex;
+        background: #09111e;
+        border: 1px solid rgba(255, 255, 255, 0.04);
+        padding: 3px;
+        border-radius: 10px;
+        margin-bottom: 18px;
+        gap: 2px;
+    }
+
+    .tab-btn {
+        flex: 1;
+        background: transparent;
+        border: none;
+        color: #64748b;
+        padding: 10px 2px;
+        font-size: 11px;
+        font-weight: 700;
+        cursor: pointer;
+        border-radius: 7px;
+        transition: all 0.2s ease;
+        text-align: center;
+        white-space: nowrap;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+    }
+
+    .tab-btn i { font-size: 10px; }
+
+    .tab-btn.active {
+        background: #1e3a8a;
+        color: #00f5d4;
+        box-shadow: 0 0 12px rgba(30, 58, 138, 0.5);
+    }
+
+    .tab-content {
+        display: none;
+        animation: tabFade 0.2s ease-in-out forwards;
+    }
+
+    .tab-content.active-content { display: block; }
+
+    @keyframes tabFade {
+        from { opacity: 0; transform: translateY(4px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .level-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .level-card {
+        background: linear-gradient(180deg, #0d1625 0%, #070c14 100%);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 14px;
+        padding: 14px;
+        box-sizing: border-box;
+        position: relative;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+
+    .card-disabled {
+        border-color: rgba(255, 255, 255, 0.02) !important;
+        background: #04080f !important;
+    }
+
+    .card-disabled .data-grid,
+    .card-disabled .level-badge,
+    .card-disabled .crypto-limit-info {
+        opacity: 0.15;
+        pointer-events: none;
+    }
+
+    .lock-overlay-msg {
+        background: rgba(239, 68, 68, 0.05);
+        border: 1px solid rgba(239, 68, 68, 0.15);
+        color: #f87171;
+        padding: 10px;
+        border-radius: 8px;
+        font-size: 11px;
+        font-weight: 600;
+        text-align: center;
+        margin-bottom: 12px;
+        line-height: 1.3;
+    }
+
+    .active-glow {
+        border-color: #00f5d4 !important;
+        box-shadow: 0 0 15px rgba(0, 245, 212, 0.1);
+    }
+
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        padding-bottom: 8px;
+    }
+
+    .level-badge {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-weight: 800;
+        font-size: 12px;
+        letter-spacing: 0.3px;
+    }
+
+    .text-longo { color: #00b4d8; }
+    .text-curto { color: #38b000; }
+    .text-actividade { color: #cc5de8; }
+
+    .status-tag {
+        font-size: 9px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-weight: 800;
+    }
+
+    .status-tag.active {
+        background: rgba(0, 245, 212, 0.15);
+        color: #00f5d4;
+        border: 1px solid rgba(0, 245, 212, 0.3);
+    }
+
+    .status-tag.locked {
+        background: #1e293b;
+        color: #94a3b8;
+    }
+
+    .crypto-limit-info {
+        font-size: 10px;
+        color: #94a3b8;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .data-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+
+    .grid-col-span-2 { grid-column: span 2; }
+
+    .data-box {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        background: rgba(255, 255, 255, 0.01);
+        border: 1px solid rgba(255, 255, 255, 0.02);
+        padding: 6px 8px;
+        border-radius: 6px;
+    }
+
+    .data-label {
+        font-size: 9px;
+        color: #64748b;
+        text-transform: uppercase;
+        display: flex;
+        align-items: center;
+        gap: 3px;
+    }
+
+    .data-value {
+        font-size: 12px;
+        font-weight: 700;
+        color: #f1f5f9;
+    }
+
+    .highlight-gold { color: #fbbf24; }
+    .highlight-green { color: #4ade80; }
+    .highlight-blue { color: #38bdf8; }
+    .text-alert { color: #f97316; font-size: 10px; font-weight: normal; }
+    .text-success { color: #4ade80; }
+
+    .investment-monitor {
+        margin-top: 12px;
+        background: #050911;
+        border: 1px solid rgba(255, 255, 255, 0.03);
+        border-radius: 8px;
+        padding: 8px;
+    }
+
+    .monitor-title {
+        margin: 0 0 6px 0;
+        font-size: 9px;
+        color: #64748b;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    .monitor-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 11px;
+        padding: 5px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+    }
+
+    .monitor-row:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+    .monitor-info-block { display: flex; flex-direction: column; }
+    .day-indicator { font-size: 10px; color: #94a3b8; }
+    
+    .text-realtime {
+        font-family: monospace;
+        font-weight: bold;
+    }
+
+    .monitor-row .accumulated { color: #fbbf24; }
+    .monitor-row .accumulated-ready { color: #4ade80; }
+
+    .crypto-timer {
+        background: rgba(251, 191, 36, 0.05);
+        border: 1px solid rgba(251, 191, 36, 0.15);
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: monospace;
+        font-size: 10px;
+        color: #fbbf24;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .invest-button {
+        width: 100%;
+        border: none;
+        padding: 11px;
+        border-radius: 8px;
+        color: white;
+        font-weight: 700;
+        font-size: 11px;
+        margin-top: 12px;
+        cursor: pointer;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 6px;
+        letter-spacing: 0.3px;
+        transition: opacity 0.2s;
+    }
+
+    .invest-button:active { opacity: 0.8; }
+
+    .bg-longo { background: linear-gradient(90deg, #0077b6 0%, #00b4d8 100%); }
+    .bg-curto { background: linear-gradient(90deg, #1b4332 0%, #2d6a4f 100%); }
+    .bg-actividade { background: linear-gradient(90deg, #673ab7 0%, #9c27b0 100%); }
+
+    .invest-button:disabled {
+        background: #1e293b !important;
+        color: #475569 !important;
+        cursor: not-allowed;
+        border: none !important;
+    }
+
+    .empty-msg {
+        text-align: center;
+        font-size: 11px;
+        color: #475569;
+        padding: 16px;
+    }
+</style>
+
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        const activeBtn = Array.from(document.querySelectorAll('.tab-btn')).find(btn => 
+            btn.getAttribute('onclick').includes(tabId)
+        );
+        if(activeBtn) activeBtn.classList.add('active');
+
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active-content'));
+        document.getElementById(tabId).classList.add('active-content');
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        // 1. Célula de contagem regressiva visual de 24 horas padrão
+        const timers = document.querySelectorAll('.countdown-timer');
+        timers.forEach(timer => {
+            let totalSeconds = parseInt(timer.getAttribute('data-seconds')) || 86400;
+            const updateTimer = () => {
+                if (totalSeconds <= 0) {
+                    timer.textContent = "00:00:00";
+                    return;
+                }
+                totalSeconds--;
+                let hrs = Math.floor(totalSeconds / 3600);
+                let mins = Math.floor((totalSeconds % 3600) / 60);
+                let secs = totalSeconds % 60;
+                timer.textContent = 
+                    (hrs < 10 ? "0" : "") + hrs + ":" + 
+                    (mins < 10 ? "0" : "") + mins + ":" + 
+                    (secs < 10 ? "0" : "") + secs;
+            };
+            setInterval(updateTimer, 1000);
+            updateTimer();
+        });
+
+        // 2. Motor de Acumulação em Tempo Real (Longo e Curto Prazo)
+        const tickers = document.querySelectorAll('.real-time-ticker');
+        tickers.forEach(ticker => {
+            const baseProfit = parseFloat(ticker.getAttribute('data-base-profit')) || 0;
+            const dailyGain = parseFloat(ticker.getAttribute('data-daily-gain')) || 0;
+            let initialSecondsPassed = parseFloat(ticker.getAttribute('data-seconds-passed')) || 0;
+            
+            const profitPerSecond = dailyGain / 86400; // Lucro fracionado por segundo
+            const displayElement = ticker.querySelector('.ticker-value');
+            const startTime = Date.now();
+
+            const updateTicker = () => {
+                const elapsedMs = Date.now() - startTime;
+                const elapsedSeconds = elapsedMs / 1000;
+                const totalCurrentSeconds = initialSecondsPassed + elapsedSeconds;
+                
+                // Limita o ganho do dia atual ao daily_gain máximo
+                const currentDayLiveProfit = Math.min(totalCurrentSeconds * profitPerSecond, dailyGain);
+                const finalLiveProfit = baseProfit + currentDayLiveProfit;
+
+                displayElement.textContent = finalLiveProfit.toFixed(4);
+            };
+
+            setInterval(updateTicker, 100); // Atualização fluida a cada 100ms
+            updateTicker();
+        });
+
+        // 3. Motor de Acumulação Linear para Actividades (Baseado no Ciclo Completo)
+        const activityTickers = document.querySelectorAll('.real-time-ticker-activity');
+        activityTickers.forEach(ticker => {
+            const baseProfit = parseFloat(ticker.getAttribute('data-base-profit')) || 0;
+            const totalGain = parseFloat(ticker.getAttribute('data-total-gain')) || 0;
+            const totalCycleSeconds = parseFloat(ticker.getAttribute('data-total-seconds')) || 1;
+            let elapsedSeconds = parseFloat(ticker.getAttribute('data-elapsed-seconds')) || 0;
+
+            const profitPerSecond = totalGain / totalCycleSeconds;
+            const displayElement = ticker.querySelector('.ticker-value');
+            const startTime = Date.now();
+
+            const updateActivityTicker = () => {
+                const currentElapsedMs = Date.now() - startTime;
+                const currentElapsedSeconds = elapsedSeconds + (currentElapsedMs / 1000);
+                
+                const finalLiveProfit = Math.min(currentElapsedSeconds * profitPerSecond, totalGain);
+                displayElement.textContent = finalLiveProfit.toFixed(4);
+            };
+
+            setInterval(updateActivityTicker, 100);
+            updateActivityTicker();
+        });
+    });
+</script>
+{% endblock %}

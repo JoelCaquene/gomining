@@ -1,0 +1,283 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+<div id="win-modal" class="win-overlay" style="display: none;">
+    <div class="win-content">
+        <div class="confetti-icon">🎉</div>
+        <h2>PARABÉNS!</h2>
+        <p>Você acabou de ganhar</p>
+        <div class="win-amount" id="modal-prize">0 KZ</div>
+        <p class="win-date" id="modal-date"></p>
+        <button onclick="closeWinModal()" class="btn-close-win">RECOLHER PRÊMIO</button>
+    </div>
+</div>
+
+<div class="casino-main-wrapper">
+    <div class="casino-ray-bg"></div>
+    
+    <div class="container py-4 position-relative main-content">
+        <div class="text-center mb-3">
+            <h1 class="premium-title">GOLDEN WHEEL</h1>
+            <p class="premium-subtitle">SISTEMA DE PREMIAÇÃO VIP</p>
+            <div class="balance-badge">
+                <i class="fas fa-ticket-alt"></i> 
+                GIROS: <span id="roulette-spins">{{ roulette_spins }}</span>
+            </div>
+        </div>
+
+        <div class="wheel-outer-container">
+            <div class="wheel-pointer"></div>
+            <div class="wheel-box">
+                <div class="led-ring" id="led-container"></div>
+                <div class="canvas-wrapper">
+                    <canvas id="wheel-canvas" width="500" height="500"></canvas>
+                </div>
+                <div class="center-spin-anchor" id="spin-trigger">
+                    <div class="center-btn-body"><span>GIRAR</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="winners-card mt-4">
+            <h4 class="card-title text-center"><i class="fas fa-trophy text-warning"></i> Vencedores Recentes</h4>
+            <div class="ticker-container">
+                <div class="winners-ticker" id="winners-feed">
+                    {% for winner in recent_winners %}
+                    <div class="winner-item-ticker">
+                        <span class="ticker-user">****{{ winner.user.phone_number|slice:"-4:" }}</span>
+                        <span class="ticker-action">ganhou</span>
+                        <span class="ticker-value">{{ winner.prize }} KZ</span>
+                    </div>
+                    {% empty %}
+                    <div class="winner-item-ticker">Aguardando novos giros...</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<audio id="snd-spin" preload="auto" src="https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3"></audio>
+<audio id="snd-win" preload="auto" src="https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3"></audio>
+
+<style>
+    :root {
+        --gold: linear-gradient(145deg, #ffd700, #b8860b);
+        --dark-bg: #1a0202;
+    }
+
+    /* Reset e Fundo */
+    body, html { margin: 0; padding: 0; background-color: #000; overflow-x: hidden; height: 100%; }
+    
+    .casino-main-wrapper {
+        min-height: 100vh;
+        background: radial-gradient(circle at center, #4b0000 0%, #000 100%);
+        font-family: 'Poppins', sans-serif;
+        position: relative;
+        color: #fff;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .casino-ray-bg {
+        position: absolute;
+        inset: 0;
+        background: repeating-conic-gradient(from 0deg, #300000 0deg 15deg, #4b0000 15deg 30deg);
+        opacity: 0.3;
+        z-index: 0;
+    }
+
+    .main-content { z-index: 1; flex: 1; }
+
+    .premium-title { font-weight: 900; font-size: 2.2rem; background: var(--gold); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0; }
+    .premium-subtitle { color: rgba(255,255,255,0.6); font-size: 0.7rem; letter-spacing: 2px; }
+
+    .balance-badge { background: rgba(0,0,0,0.8); padding: 8px 20px; border-radius: 50px; border: 1px solid #ffd700; font-weight: bold; margin-top: 10px; font-size: 0.9rem; }
+
+    /* Roleta Responsiva */
+    .wheel-outer-container {
+        position: relative;
+        width: 90vw;
+        max-width: 360px; /* Reduzido para caber melhor */
+        margin: 20px auto;
+    }
+
+    .wheel-pointer {
+        position: absolute;
+        top: -10px; left: 50%; transform: translateX(-50%);
+        width: 35px; height: 45px; background: #ff0000;
+        clip-path: polygon(0% 0%, 100% 0%, 50% 100%);
+        z-index: 100; border: 2px solid white;
+    }
+
+    .wheel-box {
+        position: relative; width: 100%; aspect-ratio: 1/1;
+        background: #222; border-radius: 50%; border: 10px solid #333;
+        box-shadow: 0 0 30px rgba(0,0,0,0.8);
+    }
+
+    .canvas-wrapper { width: 100%; height: 100%; border-radius: 50%; overflow: hidden; }
+    #wheel-canvas { width: 100%; height: 100%; transition: transform 6s cubic-bezier(0.2, 0, 0, 1); }
+
+    .center-spin-anchor {
+        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        width: 70px; height: 70px; background: #ffd700; border-radius: 50%; z-index: 110;
+        cursor: pointer; padding: 4px; box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    }
+
+    .center-btn-body {
+        width: 100%; height: 100%; background: #000; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        color: #ffd700; font-weight: 900; font-size: 0.75rem; border: 2px solid #ffd700;
+    }
+
+    /* Sistema de Ticker (Passagem) */
+    .ticker-container {
+        height: 120px; overflow: hidden; position: relative;
+        background: rgba(255,255,255,0.05); border-radius: 15px; padding: 10px;
+    }
+
+    .winners-ticker { animation: scrollTicker 15s linear infinite; }
+    .winners-ticker:hover { animation-play-state: paused; }
+
+    @keyframes scrollTicker {
+        0% { transform: translateY(0); }
+        100% { transform: translateY(-50%); }
+    }
+
+    .winner-item-ticker {
+        padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);
+        display: flex; justify-content: space-between; font-size: 0.9rem;
+    }
+    .ticker-value { color: #00bcd4; font-weight: bold; }
+
+    /* Modal de Vitória */
+    .win-overlay {
+        position: fixed; inset: 0; background: rgba(0,0,0,0.9);
+        display: flex; align-items: center; justify-content: center; z-index: 9999;
+        animation: fadeIn 0.5s;
+    }
+    .win-content {
+        background: #fff; color: #333; padding: 30px; border-radius: 25px;
+        text-align: center; width: 85%; max-width: 350px;
+        box-shadow: 0 0 50px #ffd700;
+    }
+    .win-amount { font-size: 2.5rem; font-weight: 900; color: #d40000; margin: 15px 0; }
+    .btn-close-win {
+        background: #000; color: #ffd700; border: none; padding: 12px 25px;
+        border-radius: 50px; font-weight: bold; width: 100%; margin-top: 20px;
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    .winners-card { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,215,0,0.3); border-radius: 20px; padding: 15px; margin-bottom: 20px; }
+    .card-title { font-size: 1rem; color: #ffd700; margin-bottom: 15px; }
+
+    .led { position: absolute; width: 6px; height: 6px; background: #fff; border-radius: 50%; left: 50%; top: 1%; transform-origin: 50% 2800%; box-shadow: 0 0 5px #fff; }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const canvas = document.getElementById('wheel-canvas');
+    const ctx = canvas.getContext('2d');
+    const spinTrigger = document.getElementById('spin-trigger');
+    const spinsDisplay = document.getElementById('roulette-spins');
+    const sndSpin = document.getElementById('snd-spin');
+    const sndWin = document.getElementById('snd-win');
+
+    let prizes = {{ prizes_list|safe }};
+    if (!prizes || prizes.length === 0) prizes = ["0", "500", "1000", "2500", "5000", "10000"];
+
+    const segments = prizes.length;
+    const arc = (2 * Math.PI) / segments;
+    let currentRotation = 0;
+    let isSpinning = false;
+
+    function draw() {
+        ctx.clearRect(0,0,500,500);
+        for (let i = 0; i < segments; i++) {
+            const angle = i * arc;
+            ctx.fillStyle = (i % 2 === 0) ? "#fffbe6" : "#ffffff";
+            ctx.beginPath();
+            ctx.moveTo(250, 250);
+            ctx.arc(250, 250, 245, angle, angle + arc);
+            ctx.lineTo(250, 250);
+            ctx.fill();
+            ctx.strokeStyle = "#ffd700";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            ctx.save();
+            ctx.translate(250, 250);
+            ctx.rotate(angle + arc / 2);
+            ctx.textAlign = "right";
+            ctx.fillStyle = "#4b0000";
+            ctx.font = "bold 24px Arial";
+            ctx.fillText(prizes[i], 220, 10);
+            ctx.restore();
+        }
+    }
+
+    function spin() {
+        if (isSpinning || parseInt(spinsDisplay.innerText) <= 0) return;
+        isSpinning = true;
+        sndSpin.play().catch(()=>{});
+
+        fetch('{% url "spin_roulette" %}', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/json' }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.success) {
+                const prizeIndex = prizes.indexOf(data.prize.toString());
+                const extraRounds = 360 * 8;
+                const segmentDeg = 360 / segments;
+                const stopAngle = extraRounds + (360 - (prizeIndex * segmentDeg)) - (segmentDeg / 2) - 90;
+
+                currentRotation += stopAngle;
+                canvas.style.transform = `rotate(${currentRotation}deg)`;
+
+                setTimeout(() => {
+                    sndWin.play().catch(()=>{});
+                    showWinModal(data.prize);
+                    spinsDisplay.innerText = data.remaining_spins;
+                    isSpinning = false;
+                }, 6500);
+            } else {
+                alert(data.message);
+                isSpinning = false;
+            }
+        });
+    }
+
+    window.showWinModal = function(amount) {
+        document.getElementById('modal-prize').innerText = amount + " KZ";
+        const now = new Date();
+        document.getElementById('modal-date').innerText = now.toLocaleDateString() + " às " + now.toLocaleTimeString();
+        document.getElementById('win-modal').style.display = 'flex';
+    };
+
+    window.closeWinModal = function() {
+        document.getElementById('win-modal').style.display = 'none';
+        location.reload(); // Atualiza para ver o novo saldo/feed
+    };
+
+    function createLeds() {
+        const container = document.getElementById('led-container');
+        for (let i = 0; i < 20; i++) {
+            const led = document.createElement('div');
+            led.className = 'led';
+            led.style.transform = `rotate(${i * 18}deg) translateY(-225px)`;
+            container.appendChild(led);
+        }
+    }
+
+    draw();
+    createLeds();
+    spinTrigger.addEventListener('click', spin);
+});
+</script>
+{% endblock %}

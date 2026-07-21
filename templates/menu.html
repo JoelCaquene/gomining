@@ -1,0 +1,584 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}gomining - Alta Performance{% endblock %}
+
+{% block content %}
+<!-- POP-UP DE BOAS-VINDAS MINIMALISTA -->
+<div id="welcomeModal" class="modal-overlay">
+    <div class="modal-content">
+        <!-- X de fechar - Visível e Aumentado -->
+        <button class="btn-close-modal" onclick="closeModal()">&times;</button>
+        <div class="modal-body">
+            <!-- Apenas o link do WhatsApp -->
+            <a href="{{ whatsapp_link }}" target="_blank" class="btn-whatsapp-pop">
+                <i class="fab fa-whatsapp"></i> Grupo do WhatsApp
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- 1. TICKER DE MOEDAS DINÂMICO (NO TOPO) -->
+<div class="top-ticker">
+    <div class="ticker-content">
+        <div class="ticker-item"><i class="fab fa-bitcoin btc-icon"></i> BTC $68,432.12</div>
+        <div class="ticker-item"><i class="fab fa-ethereum eth-icon"></i> ETH $3,810.05</div>
+        <div class="ticker-item"><i class="fas fa-dollar-sign usdt-icon"></i> USDT $1.00</div>
+        <div class="ticker-item"><i class="fas fa-coins ltc-icon"></i> LTC $88.54</div>
+        <div class="ticker-item"><i class="fas fa-gem eth-icon"></i> SOL $165.70</div>
+        <div class="ticker-item"><i class="fab fa-bitcoin btc-icon"></i> BTC $68,432.12</div>
+        <div class="ticker-item"><i class="fab fa-ethereum eth-icon"></i> ETH $3,810.05</div>
+    </div>
+</div>
+
+<div class="main-content">
+
+    <!-- 2. IMAGEM DO CAROSSEL COM ALTURA VERTICAL REDUZIDA -->
+    <div class="carousel-container">
+        <div class="carousel-slide">
+            <div class="carousel-overlay">
+                <h1 class="brand-title">GOMINING</h1>
+                <p class="brand-subtitle">MINERAÇÃO DE ALTA PERFORMANCE</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. TABELA DE TRANSAÇÕES DINÂMICA (CORRIGIDO: MOVE DE BAIXO PARA CIMA) -->
+    <!-- Adicionando o contêiner de animação de volta -->
+    <div class="transaction-feed">
+        <div class="feed-title">Transações Recentes</div>
+        <div class="feed-content">
+            <!-- Esta lista agora move de baixo para cima -->
+            <div class="feed-list" id="feedList">
+                <!-- Gerado dinamicamente via JavaScript para 24 itens simulados -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. CARDS AZUL BEBÊ COM BOTÕES PRINCIPAIS -->
+    <div class="action-card-wrapper">
+        <a href="{% url 'deposito' %}" class="action-btn">
+            <i class="fa-solid fa-wallet"></i>
+            <span>Depósito</span>
+        </a>
+        <a href="{% url 'tarefa' %}" class="action-btn">
+            <i class="fa-solid fa-microchip"></i>
+            <span>Mineração</span>
+        </a>
+        <a href="{% url 'roleta' %}" class="action-btn">
+            <i class="fa-solid fa-gift"></i>
+            <span>Sorteio</span>
+        </a>
+        <a href="{% url 'sobre' %}" class="action-btn">
+            <i class="fa-solid fa-book-open"></i>
+            <span>Blog</span>
+        </a>
+    </div>
+
+    <!-- SEÇÃO INFORMATIVA PRESERVADA COM OS 3 CARDS COMPLETOS -->
+    <div class="info-section">
+        <h2 class="section-title">Como Lucrar na GOMINING</h2>
+        
+        <div class="cards-container">
+            <!-- CARD 1 -->
+            <div class="info-card gold-border">
+                <div class="card-header-glow">
+                    <span class="card-num">01</span>
+                    <i class="fa-solid fa-hourglass-half card-icon"></i>
+                </div>
+                <h3>Planos de Longo Prazo</h3>
+                <p>Invista em planos de Mineração de Longo prazo, que lhe permitirá sacar apenas depois do ciclo terminar. Os planos de longo prazo te habilitam a adquirir planos de curto prazo. Sem plano de longo prazo, você estará condicionado para adquirir planos de curto prazo.</p>
+            </div>
+
+            <!-- CARD 2 -->
+            <div class="info-card teal-border">
+                <div class="card-header-glow">
+                    <span class="card-num">02</span>
+                    <i class="fa-solid fa-bolt card-icon"></i>
+                </div>
+                <h3>Planos de Curto Prazo</h3>
+                <p>Invista em planos de mineração de curto prazo, esses planos geram receita diariamente, e podes sacar tão logo, todos os dias das 09:00 até as 18:00. Para conseguir activar o plano de curto prazo, você deve ter um plano de longo prazo activo primeiro.</p>
+            </div>
+
+            <!-- CARD 3 -->
+            <div class="info-card purple-border">
+                <div class="card-header-glow">
+                    <span class="card-num">03</span>
+                    <i class="fa-solid fa-star card-icon"></i>
+                </div>
+                <h3>Actividades</h3>
+                <p>Todas as semanas e meses iremos dar actividades, que permitirá lucrar muito ainda mais, mas as actividades esses planos apenas estarão disponível para pessoas com planos de longo e curto prazo activos.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- RODAPÉ INFORMATIVO & TELA DE CRONÓMETRO PRESERVADO -->
+    <div class="solution-container">
+        <h3 class="solution-text">Somos a solução financeira para si</h3>
+        
+        <div class="chrono-widget" id="chrono-widget" data-reg-date="{% if user.is_authenticated %}{{ user.date_joined|date:'Y-m-d H:i:s' }}{% endif %}">
+            <div class="chrono-block glow-white">
+                <span class="chrono-num" id="days-counter">0</span>
+                <span class="chrono-label">Dias Conectado</span>
+            </div>
+            
+            <div class="chrono-divider">:</div>
+            
+            <div class="chrono-block glow-cyan">
+                <span class="chrono-num" id="live-clock">00:00:00</span>
+                <span class="chrono-label" id="live-weekday">Carregando...</span>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- BARRA DE NAVEGAÇÃO INFERIOR DENTRO DE CARD ACESO PRESERVADO -->
+<div class="trading-nav-wrapper">
+    <nav class="trading-nav">
+        <a href="{% url 'home' %}" class="nav-link active">
+            <i class="fas fa-home"></i>
+            <span>Início</span>
+        </a>
+        <a href="{% url 'nivel' %}" class="nav-link">
+            <i class="fas fa-bolt"></i>
+            <span>Pacotes</span>
+        </a>
+        <a href="{% url 'renda' %}" class="nav-link">
+            <i class="fas fa-chart-line"></i>
+            <span>Renda</span>
+        </a>
+        <a href="{% url 'equipa' %}" class="nav-link">
+            <i class="fas fa-users"></i>
+            <span>Equipa</span>
+        </a>
+        <a href="{% url 'perfil' %}" class="nav-link">
+            <i class="fas fa-user-cog"></i>
+            <span>Mais</span>
+        </a>
+    </nav>
+</div>
+
+<style>
+    :root {
+        --bg-dark: #0a111f;
+        --card-bg: rgba(20, 31, 55, 0.95);
+        --blue-baby: #8dd8f8;
+        --blue-access: #4ddbff;
+        --text-white: #f8fafc;
+        --text-gray: #a0aec0;
+        --cyan-accent: #00d2ff;
+        --teal-accent: #00f5d4;
+        --accent-yellow: #fee440;
+        --accent-purple: #9b5de5;
+        --red-profit: #ff4d6d;
+        --green-profit: #00f5d4;
+    }
+
+    body {
+        background-color: var(--bg-dark);
+        color: var(--text-white);
+        font-family: 'Segoe UI', system-ui, sans-serif;
+        margin: 0;
+        padding: 0;
+        overflow-x: hidden;
+        -webkit-font-smoothing: antialiased;
+    }
+
+    /* TICKER DE MOEDAS */
+    .top-ticker {
+        width: 100%;
+        background-color: rgba(10, 17, 31, 0.8);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        overflow: hidden;
+        white-space: nowrap;
+        padding: 8px 0;
+        z-index: 100;
+        position: fixed;
+        top: 0;
+    }
+
+    .ticker-content {
+        display: inline-block;
+        animation: tickerSlide 40s linear infinite;
+        padding-left: 100%;
+    }
+
+    .ticker-item {
+        display: inline-flex;
+        align-items: center;
+        margin-right: 30px;
+        font-size: 13px;
+        color: var(--text-gray);
+    }
+
+    .ticker-item i { margin-right: 8px; font-size: 15px; }
+    .btc-icon { color: #f7931a; }
+    .eth-icon { color: #627eea; }
+    .usdt-icon { color: #26a17b; }
+    .ltc-icon { color: #bfbbbb; }
+
+    @keyframes tickerSlide {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(-100%); }
+    }
+
+    .main-content {
+        margin-top: 50px;
+        padding: 0 15px 110px 15px;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    /* CAROSSEL AJUSTADO (ALTURA VERTICAL REDUZIDA) */
+    .carousel-container {
+        width: 100%;
+        height: 130px; 
+        margin-top: 15px;
+        border-radius: 16px;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 0 25px rgba(0, 210, 255, 0.15);
+        position: relative;
+    }
+
+    .carousel-slide {
+        width: 100%;
+        height: 100%;
+        background-image: url('https://images.unsplash.com/photo-1640340434855-6084b1f4901c?auto=format&fit=crop&w=1200&q=80');
+        background-size: cover;
+        background-position: center;
+    }
+
+    .carousel-overlay {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: linear-gradient(180deg, rgba(3, 8, 19, 0.2) 0%, rgba(3, 8, 19, 0.9) 100%);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .brand-title {
+        font-size: 28px;
+        font-weight: 900;
+        letter-spacing: 5px;
+        margin: 0;
+        background: linear-gradient(to right, #ffffff, #b4f1ff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+    }
+
+    .brand-subtitle {
+        font-size: 8px;
+        color: var(--cyan-accent);
+        letter-spacing: 2px;
+        margin: 3px 0 0 0;
+        font-weight: 700;
+    }
+
+    /* TABELA DE TRANSAÇÕES DINÂMICA (CORRIGIDO: ESTILOS DE VOLTA) */
+    .transaction-feed {
+        width: 100%;
+        overflow: hidden;
+        background: rgba(10, 17, 31, 0.5);
+        border-radius: 12px;
+        padding: 10px 0;
+        margin-top: 15px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        position: relative;
+    }
+
+    .feed-title {
+        font-size: 11px;
+        color: var(--text-gray);
+        margin: 0 0 8px 15px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .feed-content {
+        display: block;
+        height: 100px; /* Altura para mostrar ~3 linhas por vez */
+        overflow: hidden;
+        position: relative;
+    }
+
+    /* Animação de rolagem vertical (BAIXO PARA CIMA) */
+    .feed-list {
+        display: block;
+        position: absolute;
+        width: 100%;
+        animation: feedSlideUp 40s linear infinite; /* Animação de volta e fluida */
+    }
+
+    /* Correção do ponto final da animação baseado em 24 itens */
+    @keyframes feedSlideUp {
+        0% { transform: translateY(0); }
+        100% { transform: translateY(-720px); } /* 24 itens * 30px de altura de linha */
+    }
+
+    .feed-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 6px 15px;
+        font-size: 12.5px;
+        height: 30px; /* Altura de linha fixa para animação precisa */
+        box-sizing: border-box;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+    }
+
+    .feed-user { color: var(--text-white); font-weight: 600; }
+    .feed-action { color: var(--text-gray); }
+    .feed-amount.deposit { color: var(--green-profit); font-weight: bold; }
+    .feed-amount.withdraw { color: var(--red-profit); font-weight: bold; }
+
+    /* BOTÕES EM CARDS AZUL BEBÊ */
+    .action-card-wrapper {
+        background-color: var(--card-bg);
+        border: 1px solid rgba(141, 216, 248, 0.2);
+        border-radius: 16px;
+        padding: 15px;
+        margin-top: 20px;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+    }
+
+    .action-btn {
+        background: rgba(10, 17, 31, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        color: var(--text-white);
+        font-size: 11px;
+        font-weight: 600;
+        height: 75px;
+        transition: all 0.2s;
+    }
+
+    .action-btn:active { transform: scale(0.95); }
+    .action-btn i { font-size: 20px; margin-bottom: 8px; }
+    .fa-wallet { color: var(--cyan-accent); }
+    .fa-microchip { color: var(--teal-accent); }
+    .fa-gift { color: var(--accent-yellow); }
+    .fa-book-open { color: var(--accent-purple); }
+
+    /* ESTILOS DOS CARDS INFORMATIVOS */
+    .info-section { margin-top: 25px; }
+    .section-title {
+        font-size: 16px;
+        font-weight: 700;
+        margin-bottom: 15px;
+        text-align: center;
+        letter-spacing: 0.5px;
+        color: var(--text-white);
+    }
+
+    .cards-container { display: flex; flex-direction: column; gap: 15px; }
+    
+    .info-card {
+        background: var(--card-bg);
+        border-radius: 16px;
+        padding: 18px;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+    }
+
+    .info-card.gold-border { border-left: 4px solid var(--cyan-accent); }
+    .info-card.teal-border { border-left: 4px solid var(--teal-accent); }
+    .info-card.purple-border { border-left: 4px solid var(--accent-purple); }
+
+    .card-header-glow { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .card-num { font-size: 11px; font-weight: 800; color: rgba(255, 255, 255, 0.2); }
+    .card-icon { font-size: 16px; }
+    
+    .gold-border .card-icon { color: var(--cyan-accent); }
+    .teal-border .card-icon { color: var(--teal-accent); }
+    .purple-border .card-icon { color: var(--accent-purple); }
+
+    .info-card h3 { font-size: 15px; font-weight: 700; margin: 0 0 6px 0; }
+    .info-card p { font-size: 12px; color: var(--text-gray); line-height: 1.5; margin: 0; }
+
+    /* CRONÓMETRO E TEXTO DE SOLUÇÃO */
+    .solution-container { margin-top: 25px; text-align: center; }
+    .solution-text { font-size: 15px; font-weight: 600; margin: 0 0 12px 0; }
+    
+    .chrono-widget {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: rgba(10, 20, 38, 0.85);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 14px;
+        padding: 12px 10px;
+        gap: 12px;
+    }
+
+    .chrono-block { flex: 1; display: flex; flex-direction: column; align-items: center; }
+    .chrono-num { font-size: 18px; font-weight: 800; font-family: monospace; }
+    .chrono-label { font-size: 9px; color: var(--text-gray); margin-top: 3px; text-transform: uppercase; }
+    .chrono-divider { font-size: 18px; font-weight: bold; color: rgba(255, 255, 255, 0.2); animation: blink 1s infinite; }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+    .glow-white .chrono-num { color: #ffffff; text-shadow: 0 0 8px rgba(255, 255, 255, 0.5); }
+    .glow-cyan .chrono-num { color: var(--teal-accent); text-shadow: 0 0 8px rgba(0, 245, 212, 0.5); }
+
+    /* BARRA DE NAVEGAÇÃO INFERIOR ACESA */
+    .trading-nav-wrapper {
+        position: fixed;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: calc(100% - 30px);
+        max-width: 570px;
+        background: #141f37;
+        border-radius: 16px 16px 0 0;
+        z-index: 999;
+        box-shadow: 0 -10px 30px rgba(77, 219, 255, 0.25);
+        border: 1px solid rgba(77, 219, 255, 0.18);
+    }
+
+    .trading-nav { height: 65px; display: flex; justify-content: space-around; align-items: center; }
+    .nav-link { text-decoration: none; color: rgba(255, 255, 255, 0.65); display: flex; flex-direction: column; align-items: center; font-size: 10px; font-weight: 600; }
+    .nav-link i { font-size: 18px; margin-bottom: 3px; }
+    .nav-link.active { color: var(--text-white); text-shadow: 0 0 8px rgba(255, 255, 255, 0.4); }
+
+    /* POP-UP MINIMALISTA */
+    .modal-overlay {
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(3, 8, 19, 0.93);
+        display: flex; justify-content: center; align-items: center;
+        z-index: 10000;
+        backdrop-filter: blur(8px);
+    }
+
+    .modal-content {
+        background: #0d1b31;
+        border: 1px solid rgba(0, 210, 255, 0.3);
+        box-shadow: 0 0 30px rgba(0, 210, 255, 0.3);
+        width: 80%;
+        max-width: 250px;
+        border-radius: 16px;
+        padding: 20px;
+        position: relative;
+        text-align: center;
+    }
+
+    .btn-close-modal {
+        position: absolute;
+        top: 8px;
+        right: 12px;
+        background: transparent;
+        border: none;
+        color: var(--text-gray);
+        font-size: 28px;
+        cursor: pointer;
+        line-height: 1;
+    }
+
+    .btn-whatsapp-pop {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        background: #25d366;
+        color: white;
+        text-decoration: none;
+        padding: 12px 20px;
+        border-radius: 30px;
+        font-weight: 700;
+        font-size: 0.9rem;
+        width: 100%;
+        box-sizing: border-box;
+        margin-top: 15px;
+    }
+</style>
+
+<script>
+    function closeModal() {
+        document.getElementById('welcomeModal').style.display = 'none';
+    }
+
+    // Gerador de Feed de Transações (CORRIGIDO: 24 EXEMPLOS DINÂMICOS EM KZ)
+    function generateFeed() {
+        const feedList = document.getElementById('feedList');
+        const users = [
+            'André M.', 'Beatriz C.', 'Carlos D.', 'Dilma F.', 'Eduardo S.', 'Fernando P.', 
+            'Gabriel R.', 'Helena T.', 'Igor J.', 'João K.', 'Karla L.', 'Lucas M.', 
+            'Maria N.', 'Nelson O.', 'Olívia P.', 'Pedro Q.', 'Quitéria R.', 'Rafael S.', 
+            'Sara T.', 'Tiago U.', 'Ulysses V.', 'Vera W.', 'Wagner X.', 'Xavier Y.'
+        ];
+        const actionsDeposit = ['depositou', 'investiu'];
+        const actionsWithdraw = ['sacou', 'recebeu lucro'];
+        
+        let html = '';
+        // Gerando 24 itens simulados
+        for (let i = 0; i < 24; i++) {
+            const user = users[i];
+            const isDeposit = Math.random() > 0.35; // 65% chance de depósito
+            let amount, action, typeClass;
+            
+            if (isDeposit) {
+                amount = (Math.floor(Math.random() * 50) + 5) * 10000; // 50k a 550k KZ
+                action = actionsDeposit[Math.floor(Math.random() * actionsDeposit.length)];
+                typeClass = 'deposit';
+            } else {
+                amount = (Math.floor(Math.random() * 80) + 10) * 1000; // 10k a 90k KZ
+                action = actionsWithdraw[Math.floor(Math.random() * actionsWithdraw.length)];
+                typeClass = 'withdraw';
+            }
+
+            const formattedAmount = new Intl.NumberFormat('pt-AO', { style: 'currency', currency: 'AOA', minimumFractionDigits: 0 }).format(amount).replace('AOA', 'KZ');
+
+            html += `
+                <div class="feed-item">
+                    <div class="feed-user">${user}</div>
+                    <div class="feed-action">${action}</div>
+                    <div class="feed-amount ${typeClass}">${formattedAmount}</div>
+                </div>
+            `;
+        }
+        feedList.innerHTML = html;
+    }
+
+    // Script do Cronómetro dinâmico preservado
+    function updateChronometer() {
+        const now = new Date();
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+        document.getElementById('live-clock').innerText = `${hours}:${minutes}:${seconds}`;
+
+        const weekdays = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+        document.getElementById('live-weekday').innerText = weekdays[now.getDay()];
+
+        const regDateAttr = document.getElementById('chrono-widget').getAttribute('data-reg-date');
+        let regDate;
+        if (regDateAttr && regDateAttr.trim() !== '') {
+            regDate = new Date(regDateAttr.replace(/-/g, '/'));
+        }
+        if (!regDate || isNaN(regDate.getTime())) {
+            regDate = new Date(Date.now() - (5 * 24 * 60 * 60 * 1000)); // Padrão de simulação
+        }
+
+        const diffTime = Math.max(0, now - regDate);
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        document.getElementById('days-counter').innerText = diffDays;
+    }
+
+    // Inicialização
+    generateFeed(); // Gera os 24 exemplos simulados
+    setInterval(updateChronometer, 1000);
+    updateChronometer();
+</script>
+{% endblock %}

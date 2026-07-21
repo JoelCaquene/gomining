@@ -1,0 +1,603 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Meu Perfil{% endblock %}
+
+{% block content %}
+<div class="profile-main-container">
+    
+    {# HEADER COMPACTO COM ID #}
+    <div class="profile-header">
+        <a href="{% url 'menu' %}" class="btn-back" title="Voltar">
+            <i class="fas fa-chevron-left"></i>
+        </a>
+        <h1 class="header-title">Meu Perfil</h1>
+        <div class="user-id-badge">
+            <span>ID:</span> <strong>{{ request.user.phone_number }}</strong>
+        </div>
+    </div>
+
+    {# INDICADORES COMPACTOS EM UMA LINHA (SISTEMA GRID - SEM ROLAGEM) #}
+    <div class="top-stats-strip">
+        <div class="stat-pill glow-green">
+            <span class="p-label">HOJE</span>
+            <span class="p-val" title="KZ {{ daily_income|default:'0.00' }}">KZ {{ daily_income|default:"0.00" }}</span>
+        </div>
+        <div class="stat-pill glow-blue">
+            <span class="p-label">SALDO</span>
+            <span class="p-val" title="KZ {{ user.available_balance|default:'0.00' }}">KZ {{ user.available_balance|default:"0.00" }}</span>
+        </div>
+        <div class="stat-pill glow-cyan">
+            <span class="p-label">SUBSÍDIO</span>
+            <span class="p-val" title="KZ {{ user.subsidy_balance|default:'0.00' }}">KZ {{ user.subsidy_balance|default:"0.00" }}</span>
+        </div>
+    </div>
+
+    {# MENSAGENS #}
+    {% if messages %}
+        {% for message in messages %}
+            <div class="custom-alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    {# CARD DE IDENTIDADE REDESENHADO #}
+    <div class="identity-card">
+        <div class="avatar-wrapper">
+            <i class="fas fa-user-shield"></i>
+        </div>
+        <div class="identity-info">
+            <span class="id-label">CONTA VERIFICADA</span>
+            <span class="id-number">{{ request.user.phone_number }}</span>
+        </div>
+    </div>
+
+    {# MENU DE NAVEGAÇÃO DE AÇÕES (ABRE EM MODAL SUPERIOR) #}
+    <div class="action-grid">
+        <button type="button" class="action-item" onclick="openModal('bank-modal')">
+            <div class="action-icon"><i class="fas fa-university"></i></div>
+            <span>Agência</span>
+        </button>
+        
+        <a href="{% url 'saque' %}" class="action-item">
+            <div class="action-icon icon-withdraw"><i class="fas fa-wallet"></i></div>
+            <span>Sacar</span>
+        </a>
+
+        <button type="button" class="action-item" onclick="openModal('history-modal')">
+            <div class="action-icon"><i class="fas fa-file-invoice-dollar"></i></div>
+            <span>Extrato</span>
+        </button>
+
+        <button type="button" class="action-item" onclick="openModal('password-modal')">
+            <div class="action-icon"><i class="fas fa-key"></i></div>
+            <span>Senha</span>
+        </button>
+    </div>
+
+    {# BOTÃO DE DOWNLOAD DO APLICATIVO APK #}
+    <a href="{% static 'app/gomining.apk' %}" class="btn-download-app" download>
+        <div class="app-btn-icon"><i class="fas fa-download"></i></div>
+        <div class="app-btn-text">
+            <strong>BAIXAR APLICATIVO APK</strong>
+            <small>Instale a versão oficial para Android</small>
+        </div>
+    </a>
+
+    {# BOTÃO DE LOGOUT #}
+    <a href="{% url 'logout' %}" class="btn-logout">
+        <i class="fas fa-power-off"></i> Encerrar Sessão
+    </a>
+
+</div>
+
+<!-- ==================== MODAIS FLUTUANTES (ACIMA DA TELA) ==================== -->
+
+{# MODAL: BANCO #}
+<div id="bank-modal" class="modal-overlay">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3><i class="fas fa-piggy-bank"></i> Dados Bancários</h3>
+            <button type="button" class="close-btn" onclick="closeModal('bank-modal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form method="post" class="modern-form">
+                {% csrf_token %}
+                <div class="field-box">
+                    <label>Nome do Titular</label>
+                    {{ form.account_holder_name }}
+                </div>
+                <div class="field-box">
+                    <label>Instituição Bancária</label>
+                    {{ form.bank_name }}
+                </div>
+                <div class="field-box">
+                    <label>IBAN da Conta</label>
+                    {{ form.IBAN }}
+                </div>
+                <button type="submit" name="update_bank" class="btn-primary">ATUALIZAR DADOS</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{# MODAL: EXTRATO / HISTÓRICO #}
+<div id="history-modal" class="modal-overlay">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3><i class="fas fa-list-ul"></i> Extrato & Regras</h3>
+            <button type="button" class="close-btn" onclick="closeModal('history-modal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <!-- REGRAS DE SAQUE -->
+            <div class="withdrawal-rules-container">
+                <div class="rule-card">
+                    <i class="fas fa-hand-holding-usd"></i>
+                    <div class="rule-txt">
+                        <strong>Taxa de Saque</strong>
+                        <span>Fixada em 15%</span>
+                    </div>
+                </div>
+                <div class="rule-card">
+                    <i class="fas fa-clock"></i>
+                    <div class="rule-txt">
+                        <strong>Horário</strong>
+                        <span>09:00h às 17:00h</span>
+                    </div>
+                </div>
+                <div class="rule-card">
+                    <i class="fas fa-calendar-check"></i>
+                    <div class="rule-txt">
+                        <strong>Dias Úteis</strong>
+                        <span>Segunda a Sábado</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pane-header">
+                <span>Últimas Transações</span>
+            </div>
+            
+            <div class="transaction-list">
+                {% if withdrawal_records %}
+                    {% for record in withdrawal_records %}
+                    <div class="history-card-item status-{{ record.status|lower|slugify }}">
+                        <div class="h-card-icon">
+                            {% if record.status == 'Aprovado' or record.status == 'Approved' %}
+                                <i class="fas fa-check-circle"></i>
+                            {% elif record.status == 'Pendente' or record.status == 'Pending' %}
+                                <i class="fas fa-hourglass-half"></i>
+                            {% else %}
+                                <i class="fas fa-times-circle"></i>
+                            {% endif %}
+                        </div>
+                        <div class="h-card-info">
+                            <span class="h-amount">- {{ record.amount }} KZ</span>
+                            <span class="h-date">{{ record.created_at|date:"d/m/Y - H:i" }}</span>
+                        </div>
+                        <div class="h-card-status">
+                            <span class="status-badge">{{ record.status }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state-container">
+                        <i class="fas fa-search-dollar"></i>
+                        <p>Nenhum registro de saque encontrado.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{# MODAL: SENHA #}
+<div id="password-modal" class="modal-overlay">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3><i class="fas fa-lock"></i> Alterar Senha</h3>
+            <button type="button" class="close-btn" onclick="closeModal('password-modal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form method="post" class="modern-form">
+                {% csrf_token %}
+                <div class="field-box">
+                    <label>Senha Atual</label>
+                    {{ password_form.old_password }}
+                </div>
+                <div class="field-box">
+                    <label>Nova Senha</label>
+                    {{ password_form.new_password1 }}
+                </div>
+                <div class="field-box">
+                    <label>Confirmar Nova Senha</label>
+                    {{ password_form.new_password2 }}
+                </div>
+                <button type="submit" name="change_password" class="btn-primary btn-black">ALTERAR SENHA</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    :root {
+        --bg-dark: #040911;
+        --card-dark: #0a1424;
+        --accent-blue: #00d2ff;
+        --accent-green: #00f5a0;
+        --accent-cyan: #00d2d3;
+        --text-gray: #8e9aaf;
+        --border-glass: rgba(255, 255, 255, 0.08);
+    }
+
+    body, html { 
+        margin: 0; 
+        padding: 0; 
+        width: 100%; 
+        overflow-x: hidden;
+        background: radial-gradient(circle at 50% 0%, #0d1b33 0%, #040911 100%) !important;
+        color: white !important;
+        font-family: 'Poppins', 'Segoe UI', Roboto, sans-serif;
+    }
+    
+    .profile-main-container { 
+        width: 100%; 
+        max-width: 600px; 
+        margin: 0 auto; 
+        padding: 12px 15px 50px 15px; 
+        box-sizing: border-box;
+    }
+
+    /* HEADER */
+    .profile-header { 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center; 
+        padding: 8px 0 12px 0; 
+    }
+    .btn-back { 
+        color: var(--accent-blue); 
+        font-size: 13px;
+        background: rgba(0, 210, 255, 0.08);
+        padding: 8px 12px;
+        border-radius: 20px;
+        border: 1px solid rgba(0, 210, 255, 0.2);
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: 0.2s;
+    }
+    .header-title { 
+        font-size: 15px; 
+        font-weight: 800; 
+        color: #fff; 
+        margin: 0; 
+        letter-spacing: 1px;
+    }
+    .user-id-badge {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--border-glass);
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 10px;
+        color: var(--text-gray);
+    }
+    .user-id-badge strong {
+        color: var(--accent-blue);
+        font-weight: 700;
+    }
+
+    /* BARRA COMPACTA EM GRID (EXATAMENTE 3 COLUNAS SEM ROLAGEM) */
+    .top-stats-strip {
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 4px !important;
+        width: 100% !important;
+        margin-bottom: 15px !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+    }
+
+    .stat-pill {
+        width: 100% !important;
+        min-width: 0 !important;
+        background: rgba(10, 20, 36, 0.9);
+        border: 1px solid var(--border-glass);
+        padding: 6px 2px !important;
+        border-radius: 8px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box !important;
+        text-align: center;
+    }
+
+    .glow-green { border-bottom: 2px solid var(--accent-green); box-shadow: 0 2px 8px rgba(0, 245, 160, 0.15); }
+    .glow-blue { border-bottom: 2px solid var(--accent-blue); box-shadow: 0 2px 8px rgba(0, 210, 255, 0.15); }
+    .glow-cyan { border-bottom: 2px solid var(--accent-cyan); box-shadow: 0 2px 8px rgba(0, 210, 211, 0.15); }
+
+    .p-label { 
+        font-size: 7.5px !important; 
+        font-weight: 800; 
+        color: var(--text-gray); 
+        letter-spacing: 0.2px;
+        margin-bottom: 2px;
+        white-space: nowrap;
+    }
+
+    .p-val { 
+        font-size: 8.5px !important; 
+        font-weight: 800; 
+        color: #fff; 
+        width: 100%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: block;
+    }
+
+    /* ALERTAS */
+    .custom-alert { padding: 12px; border-radius: 10px; margin-bottom: 15px; background: rgba(0,210,255,0.1); color: var(--accent-blue); text-align: center; font-size: 0.8rem; border: 1px solid rgba(0,210,255,0.2); }
+
+    /* CARD PRINCIPAL DE IDENTIDADE */
+    .identity-card { 
+        background: linear-gradient(135deg, rgba(10, 20, 36, 0.9) 0%, rgba(13, 37, 71, 0.8) 100%);
+        border: 1px solid var(--border-glass);
+        border-radius: 16px; 
+        padding: 16px; 
+        display: flex; 
+        align-items: center; 
+        gap: 15px; 
+        color: white; 
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4); 
+        margin-bottom: 20px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    .avatar-wrapper { 
+        width: 46px; 
+        height: 46px; 
+        background: rgba(0, 210, 255, 0.1); 
+        border: 1px solid rgba(0, 210, 255, 0.3);
+        border-radius: 50%; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        font-size: 1.2rem; 
+        color: var(--accent-blue);
+    }
+    .id-label { display: block; font-size: 0.65rem; color: var(--accent-green); font-weight: 700; letter-spacing: 0.5px; }
+    .id-number { font-size: 1.05rem; font-weight: 800; letter-spacing: 0.5px; }
+
+    /* GRID DE BOTOES */
+    .action-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; width: 100%; }
+    .action-item { background: none; border: none; display: flex; flex-direction: column; align-items: center; gap: 6px; text-decoration: none; cursor: pointer; padding: 0; }
+    .action-icon { 
+        width: 100%; 
+        max-width: 58px; 
+        aspect-ratio: 1/1; 
+        background: var(--card-dark); 
+        border: 1px solid var(--border-glass);
+        border-radius: 14px; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        font-size: 1.1rem; 
+        color: var(--accent-blue); 
+        transition: 0.2s; 
+    }
+    .action-icon.icon-withdraw { color: var(--accent-green); background: rgba(0, 245, 160, 0.05); }
+    .action-item span { font-size: 0.7rem; font-weight: 700; color: var(--text-gray); }
+
+    /* BOTÃO DE DOWNLOAD DO APP */
+    .btn-download-app {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: linear-gradient(135deg, rgba(0, 210, 255, 0.15) 0%, rgba(0, 245, 160, 0.15) 100%);
+        border: 1px solid rgba(0, 210, 255, 0.3);
+        padding: 14px;
+        border-radius: 14px;
+        text-decoration: none;
+        color: #fff;
+        margin-bottom: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+    .app-btn-icon {
+        width: 40px;
+        height: 40px;
+        background: var(--accent-blue);
+        color: #040911;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+    }
+    .app-btn-text { display: flex; flex-direction: column; }
+    .app-btn-text strong { font-size: 0.85rem; color: #fff; letter-spacing: 0.5px; }
+    .app-btn-text small { font-size: 0.7rem; color: var(--text-gray); }
+
+    /* BOTÃO LOGOUT */
+    .btn-logout { 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        gap: 8px; 
+        color: #ff5252; 
+        text-decoration: none; 
+        font-weight: 700; 
+        font-size: 0.85rem;
+        padding: 14px; 
+        border-radius: 12px; 
+        background: rgba(255, 82, 82, 0.08); 
+        border: 1px solid rgba(255, 82, 82, 0.2);
+        width: 100%; 
+        box-sizing: border-box; 
+    }
+
+    /* MODAL FLUTUANTE ACIMA DA TELA */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(4, 9, 17, 0.8);
+        backdrop-filter: blur(8px);
+        z-index: 9999;
+        justify-content: center;
+        align-items: flex-start;
+        padding-top: 30px;
+        box-sizing: border-box;
+    }
+
+    .modal-card {
+        background: #0a1424;
+        border: 1px solid var(--border-glass);
+        width: 92%;
+        max-width: 500px;
+        border-radius: 20px;
+        box-shadow: 0 15px 30px rgba(0,0,0,0.6);
+        overflow: hidden;
+        animation: slideDown 0.3s ease;
+        max-height: 85vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    @keyframes slideDown {
+        from { transform: translateY(-30px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+
+    .modal-header {
+        padding: 15px;
+        border-bottom: 1px solid var(--border-glass);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: rgba(255,255,255,0.02);
+    }
+
+    .modal-header h3 {
+        margin: 0;
+        font-size: 0.95rem;
+        color: var(--accent-blue);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .close-btn {
+        background: none;
+        border: none;
+        color: var(--text-gray);
+        font-size: 1.5rem;
+        cursor: pointer;
+        line-height: 1;
+    }
+
+    .modal-body {
+        padding: 15px;
+        overflow-y: auto;
+    }
+
+    /* FORMULÁRIO MODAL */
+    .modern-form .field-box { margin-bottom: 12px; }
+    .modern-form label { display: block; font-size: 0.75rem; color: var(--text-gray); margin-bottom: 4px; font-weight: 600; }
+    .modern-form input { 
+        width: 100%; 
+        padding: 12px; 
+        border: 1px solid var(--border-glass); 
+        border-radius: 10px; 
+        background: rgba(255,255,255,0.04); 
+        color: #fff;
+        font-size: 0.85rem; 
+        box-sizing: border-box; 
+    }
+    .btn-primary { 
+        width: 100%; 
+        padding: 14px; 
+        background: var(--accent-blue); 
+        color: #040911; 
+        border: none; 
+        border-radius: 10px; 
+        font-weight: 800; 
+        cursor: pointer; 
+        font-size: 0.85rem;
+        margin-top: 10px;
+    }
+    .btn-black { background: #1a273d; color: #fff; border: 1px solid var(--border-glass); }
+
+    /* REGRAS DE SAQUE DENTRO DO MODAL */
+    .withdrawal-rules-container { 
+        background: rgba(255,255,255,0.02); 
+        border: 1px solid var(--border-glass); 
+        border-radius: 12px; 
+        padding: 10px; 
+        display: flex; 
+        flex-direction: column; 
+        gap: 8px;
+        margin-bottom: 15px;
+    }
+    .rule-card { display: flex; align-items: center; gap: 10px; }
+    .rule-card i { 
+        font-size: 0.9rem; 
+        color: var(--accent-blue); 
+        background: rgba(0,210,255,0.08); 
+        width: 30px; 
+        height: 30px; 
+        border-radius: 8px; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+    }
+    .rule-txt { display: flex; flex-direction: column; }
+    .rule-txt strong { font-size: 0.75rem; color: #fff; }
+    .rule-txt span { font-size: 0.7rem; color: var(--text-gray); }
+
+    .pane-header { font-size: 0.8rem; font-weight: 700; color: var(--text-gray); margin-bottom: 10px; }
+
+    /* HISTÓRICO DENTRO DO MODAL */
+    .history-card-item { 
+        display: flex; 
+        align-items: center; 
+        padding: 10px; 
+        background: rgba(255,255,255,0.02); 
+        border-radius: 10px; 
+        margin-bottom: 8px; 
+        border: 1px solid var(--border-glass); 
+        border-left: 4px solid #ccc; 
+        box-sizing: border-box; 
+    }
+    .h-card-icon { width: 30px; font-size: 1rem; color: var(--text-gray); }
+    .h-card-info { flex: 1; display: flex; flex-direction: column; }
+    .h-amount { font-weight: 800; font-size: 0.85rem; color: #fff; }
+    .h-date { font-size: 0.65rem; color: var(--text-gray); }
+    .status-badge { font-size: 0.6rem; font-weight: 800; padding: 3px 6px; border-radius: 4px; background: rgba(255,255,255,0.05); }
+
+    .empty-state-container { text-align: center; color: var(--text-gray); padding: 20px; font-size: 0.8rem; }
+    .empty-state-container i { font-size: 1.5rem; margin-bottom: 6px; display: block; }
+</style>
+
+<script>
+    function openModal(modalId) {
+        document.getElementById(modalId).style.display = 'flex';
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+    }
+
+    window.onclick = function(event) {
+        if (event.target.classList.contains('modal-overlay')) {
+            event.target.style.display = 'none';
+        }
+    };
+</script>
+{% endblock %}
