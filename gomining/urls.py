@@ -9,13 +9,8 @@ urlpatterns = [
     path('', include('core.urls')),
 ]
 
-# Esta configuração permite que o Render sirva os comprovativos
-# mesmo com DEBUG=False
+# Servir Mídia e Estáticos mesmo com DEBUG=False
 urlpatterns += [
     re_path(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),
+    re_path(r'^static/(?P<path>.*)$', serve, {'document_root': settings.STATIC_ROOT}),
 ]
-
-# Mantém a compatibilidade com arquivos estáticos em desenvolvimento
-if settings.DEBUG:
-    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-    
