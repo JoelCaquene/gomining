@@ -10,13 +10,19 @@
         <!-- X de fechar - Visível e Aumentado -->
         <button class="btn-close-modal" onclick="closeModal()">&times;</button>
         <div class="modal-body">
-            <!-- Apenas o link do WhatsApp -->
+            <!-- Link do WhatsApp (mantém a lógica do Django) -->
             <a href="{{ whatsapp_link }}" target="_blank" class="btn-whatsapp-pop">
                 <i class="fab fa-whatsapp"></i> Grupo do WhatsApp
+            </a>
+            
+            <!-- Novo Link do Telegram (direto, sem passar pelo Django) -->
+            <a href="https://t.me/gominingoficial" target="_blank" class="btn-whatsapp-pop">
+                <i class="fab fa-telegram-plane"></i> Canal do Telegram
             </a>
         </div>
     </div>
 </div>
+{% endblock %}
 
 <!-- 1. TICKER DE MOEDAS DINÂMICO (NO TOPO) -->
 <div class="top-ticker">
