@@ -355,6 +355,24 @@ def nivel(request):
             messages.error(request, f'Bloqueado! Limite de 3 ativações simultâneas atingido para o plano {level_to_buy.get_category_display()} {level_to_buy.name}.')
             return redirect('nivel')
 
+        # --- NOVA LÓGICA: CURTO PRAZO SEGUE O NÚMERO DE ATIVAÇÕES DO LONGO PRAZO ---
+        if level_to_buy.category == 'short_term':
+            long_term_count = UserLevel.objects.filter(
+                user=user, 
+                level__category='long_term', 
+                level__name=level_to_buy.name
+            ).count()
+            
+            short_term_count = UserLevel.objects.filter(
+                user=user, 
+                level=level_to_buy
+            ).count()
+
+            if short_term_count >= long_term_count:
+                messages.error(request, f'Bloqueado! Ative mais vezes o plano de Longo Prazo {level_to_buy.name} para desbloquear novas ativações de curto prazo.')
+                return redirect('nivel')
+        # -------------------------------------------------------------------------
+
         active_long_term = UserLevel.objects.filter(user=user, is_active=True, level__category='long_term').values_list('level__name', flat=True)
         active_short_term = UserLevel.objects.filter(user=user, is_active=True, level__category='short_term').values_list('level__name', flat=True)
 
@@ -450,7 +468,7 @@ def nivel(request):
         'activity_levels': activity_levels,
     }
     return render(request, 'nivel.html', context)
-
+    
 # --- EQUIPA ---
 @login_required
 def equipa(request):
