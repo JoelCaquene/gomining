@@ -22,8 +22,8 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
-    'gomining.art',
-    'www.gomining.art',
+    'gomining.fyi',
+    'www.gomining.fyi',
     'gominings.onrender.com',
 ]
 
@@ -34,8 +34,8 @@ if RENDER_EXTERNAL_HOSTNAME and RENDER_EXTERNAL_HOSTNAME not in ALLOWED_HOSTS:
 
 # Configuração de origens confiáveis para proteção CSRF no Render
 CSRF_TRUSTED_ORIGINS = [
-    'https://gomining.art',
-    'https://www.gomining.art',
+    'https://gomining.fyi',
+    'https://www.gomining.fyi',
     'https://gominings.onrender.com',
 ]
 if RENDER_EXTERNAL_HOSTNAME:
