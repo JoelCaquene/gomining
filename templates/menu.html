@@ -10,9 +10,14 @@
         <!-- X de fechar - Visível e Aumentado -->
         <button class="btn-close-modal" onclick="closeModal()">&times;</button>
         <div class="modal-body">
-            <!-- Apenas o link do WhatsApp -->
+            <!-- Link do WhatsApp (mantém a lógica do Django) -->
             <a href="{{ whatsapp_link }}" target="_blank" class="btn-whatsapp-pop">
                 <i class="fab fa-whatsapp"></i> Grupo do WhatsApp
+            </a>
+            
+            <!-- Novo Link do Telegram (direto, sem passar pelo Django) -->
+            <a href="https://t.me/gominingoficial" target="_blank" class="btn-whatsapp-pop" style="background-color: #0088cc;">
+                <i class="fab fa-telegram-plane"></i> Canal do Telegram
             </a>
         </div>
     </div>
@@ -43,14 +48,12 @@
         </div>
     </div>
 
-    <!-- 4. TABELA DE TRANSAÇÕES DINÂMICA (CORRIGIDO: MOVE DE BAIXO PARA CIMA) -->
-    <!-- Adicionando o contêiner de animação de volta -->
+    <!-- 4. TABELA DE TRANSAÇÕES DINÂMICA -->
     <div class="transaction-feed">
         <div class="feed-title">Transações Recentes</div>
         <div class="feed-content">
-            <!-- Esta lista agora move de baixo para cima -->
             <div class="feed-list" id="feedList">
-                <!-- Gerado dinamicamente via JavaScript para 24 itens simulados -->
+                <!-- Gerado dinamicamente via JavaScript -->
             </div>
         </div>
     </div>
@@ -231,7 +234,7 @@
         margin-right: auto;
     }
 
-    /* CAROSSEL AJUSTADO (ALTURA VERTICAL REDUZIDA) */
+    /* CAROSSEL AJUSTADO */
     .carousel-container {
         width: 100%;
         height: 130px; 
@@ -280,7 +283,7 @@
         font-weight: 700;
     }
 
-    /* TABELA DE TRANSAÇÕES DINÂMICA (CORRIGIDO: ESTILOS DE VOLTA) */
+    /* TABELA DE TRANSAÇÕES DINÂMICA */
     .transaction-feed {
         width: 100%;
         overflow: hidden;
@@ -303,23 +306,21 @@
 
     .feed-content {
         display: block;
-        height: 100px; /* Altura para mostrar ~3 linhas por vez */
+        height: 100px;
         overflow: hidden;
         position: relative;
     }
 
-    /* Animação de rolagem vertical (BAIXO PARA CIMA) */
     .feed-list {
         display: block;
         position: absolute;
         width: 100%;
-        animation: feedSlideUp 40s linear infinite; /* Animação de volta e fluida */
+        animation: feedSlideUp 40s linear infinite;
     }
 
-    /* Correção do ponto final da animação baseado em 24 itens */
     @keyframes feedSlideUp {
         0% { transform: translateY(0); }
-        100% { transform: translateY(-720px); } /* 24 itens * 30px de altura de linha */
+        100% { transform: translateY(-720px); }
     }
 
     .feed-item {
@@ -328,7 +329,7 @@
         align-items: center;
         padding: 6px 15px;
         font-size: 12.5px;
-        height: 30px; /* Altura de linha fixa para animação precisa */
+        height: 30px;
         box-sizing: border-box;
         border-bottom: 1px solid rgba(255, 255, 255, 0.02);
     }
@@ -509,7 +510,6 @@
         document.getElementById('welcomeModal').style.display = 'none';
     }
 
-    // Gerador de Feed de Transações (CORRIGIDO: 24 EXEMPLOS DINÂMICOS EM KZ)
     function generateFeed() {
         const feedList = document.getElementById('feedList');
         const users = [
@@ -522,18 +522,17 @@
         const actionsWithdraw = ['sacou', 'recebeu lucro'];
         
         let html = '';
-        // Gerando 24 itens simulados
         for (let i = 0; i < 24; i++) {
             const user = users[i];
-            const isDeposit = Math.random() > 0.35; // 65% chance de depósito
+            const isDeposit = Math.random() > 0.35;
             let amount, action, typeClass;
             
             if (isDeposit) {
-                amount = (Math.floor(Math.random() * 50) + 5) * 10000; // 50k a 550k KZ
+                amount = (Math.floor(Math.random() * 50) + 5) * 10000;
                 action = actionsDeposit[Math.floor(Math.random() * actionsDeposit.length)];
                 typeClass = 'deposit';
             } else {
-                amount = (Math.floor(Math.random() * 80) + 10) * 1000; // 10k a 90k KZ
+                amount = (Math.floor(Math.random() * 80) + 10) * 1000;
                 action = actionsWithdraw[Math.floor(Math.random() * actionsWithdraw.length)];
                 typeClass = 'withdraw';
             }
@@ -551,7 +550,6 @@
         feedList.innerHTML = html;
     }
 
-    // Script do Cronómetro dinâmico preservado
     function updateChronometer() {
         const now = new Date();
         const hours = String(now.getHours()).padStart(2, '0');
@@ -568,7 +566,7 @@
             regDate = new Date(regDateAttr.replace(/-/g, '/'));
         }
         if (!regDate || isNaN(regDate.getTime())) {
-            regDate = new Date(Date.now() - (5 * 24 * 60 * 60 * 1000)); // Padrão de simulação
+            regDate = new Date(Date.now() - (5 * 24 * 60 * 60 * 1000));
         }
 
         const diffTime = Math.max(0, now - regDate);
@@ -576,8 +574,7 @@
         document.getElementById('days-counter').innerText = diffDays;
     }
 
-    // Inicialização
-    generateFeed(); // Gera os 24 exemplos simulados
+    generateFeed();
     setInterval(updateChronometer, 1000);
     updateChronometer();
 </script>
