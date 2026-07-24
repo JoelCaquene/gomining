@@ -41,26 +41,67 @@
             {% csrf_token %}
             <input type="hidden" name="{{ form.amount.name }}" id="id_amount" value="">
             <input type="hidden" name="selected_bank" id="id_selected_bank" value="">
+            <input type="hidden" name="payment_method" id="id_payment_method" value="fiat">
+            <input type="hidden" name="usdt_amount" id="id_usdt_amount" value="">
 
             <!-- ETAPA 1: VALOR -->
             <div id="step-1" class="step-content">
+                <!-- Seletor de Método A) Kwanza ou B) USDT -->
+                <div class="payment-method-tabs">
+                    <button type="button" class="tab-btn active" data-method="fiat">
+                        <span>A) Kwanza (Fiat)</span>
+                    </button>
+                    <button type="button" class="tab-btn" data-method="usdt">
+                        <span>B) USDT (Crypto)</span>
+                    </button>
+                </div>
+
                 <div class="balance-card">
                     <p>Saldo Atual</p>
                     <h3>Kz 0.00</h3>
                 </div>
 
-                <div class="amount-section">
-                    <label class="section-label" for="manual-amount">Valor do Recarregamento</label>
-                    <div class="input-wrapper">
-                        <span>Kz</span>
-                        <input type="number" id="manual-amount" inputmode="decimal" placeholder="Digite o valor">
+                <!-- Aba Kwanza -->
+                <div id="panel-fiat" class="currency-panel">
+                    <div class="amount-section">
+                        <label class="section-label" for="manual-amount-fiat">Valor do Recarregamento (Kwanza)</label>
+                        <div class="input-wrapper">
+                            <span>Kz</span>
+                            <input type="number" id="manual-amount-fiat" inputmode="decimal" placeholder="Digite o valor">
+                        </div>
+
+                        <p class="label-small">Valores Rápidos</p>
+                        <div class="grid-amounts" id="grid-fiat">
+                            {% for deposit_value in level_deposits_list %}
+                                <button type="button" class="amount-btn" data-value="{{ deposit_value }}">{{ deposit_value }}</button>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Aba USDT -->
+                <div id="panel-usdt" class="currency-panel" style="display: none;">
+                    <!-- Aviso de segurança exigido -->
+                    <div class="info-rules usdt-warning-box">
+                        <h4>Atenção</h4>
+                        <ul>
+                            <li><span>!</span> Use canais iguais de pagamento para evitar perda de fundo. Se usar TRC20, paga com TRC20.</li>
+                        </ul>
                     </div>
 
-                    <p class="label-small">Valores Rápidos</p>
-                    <div class="grid-amounts">
-                        {% for deposit_value in level_deposits_list %}
-                            <button type="button" class="amount-btn" data-value="{{ deposit_value }}">{{ deposit_value }}</button>
-                        {% endfor %}
+                    <div class="amount-section">
+                        <label class="section-label" for="manual-amount-usdt">Valor do Recarregamento (USDT)</label>
+                        <div class="input-wrapper">
+                            <span>$</span>
+                            <input type="number" id="manual-amount-usdt" inputmode="decimal" placeholder="Digite o valor em USDT">
+                        </div>
+
+                        <p class="label-small">Valores Rápidos Convertidos (Câmbio Wise: 1 USDT = {{ usdt_rate }} Kz)</p>
+                        <div class="grid-amounts" id="grid-usdt">
+                            {% for deposit_value in level_deposits_list %}
+                                <button type="button" class="amount-btn usdt-quick-btn" data-kwanza-value="{{ deposit_value }}">--</button>
+                            {% endfor %}
+                        </div>
                     </div>
                 </div>
 
@@ -77,41 +118,57 @@
                 <button type="button" class="btn-main" id="to-step-2" disabled>Recarregar Agora</button>
             </div>
 
-            <!-- ETAPA 2: BANCO -->
+            <!-- ETAPA 2: BANCO / CANAL -->
             <div id="step-2" class="step-content" style="display: none;">
-                <label class="section-label center-label">Escolha o Banco Destino</label>
-                <div class="bank-list">
+                <label class="section-label center-label" id="bank-step-label">Escolha o Banco Destino</label>
+                
+                <!-- Lista para Fiat -->
+                <div class="bank-list" id="list-fiat">
                     {% for bank in platform_bank_details %}
-                        <button type="button" class="bank-option-btn" data-bank-id="{{ forloop.counter }}">
-                            {{ bank.bank_name }}
-                        </button>
+                        {% if not bank.is_crypto %}
+                            <button type="button" class="bank-option-btn" data-bank-id="{{ forloop.counter }}">
+                                {{ bank.bank_name }}
+                            </button>
+                        {% endif %}
                     {% endfor %}
                 </div>
+
+                <!-- Lista para USDT -->
+                <div class="bank-list" id="list-usdt" style="display: none;">
+                    {% for bank in platform_bank_details %}
+                        {% if bank.is_crypto %}
+                            <button type="button" class="bank-option-btn" data-bank-id="{{ forloop.counter }}">
+                                🌐 {{ bank.bank_name }}
+                            </button>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+
                 <button type="button" class="btn-main space-top" id="to-step-3" disabled>Próxima etapa</button>
             </div>
 
             <!-- ETAPA 3: TRANSFERÊNCIA -->
             <div id="step-3" class="step-content" style="display: none;">
-                <label class="section-label">Dados para Transferência</label>
+                <label class="section-label" id="transfer-label">Dados para Transferência</label>
                 <div class="bank-details-wrapper">
                     {% for bank in platform_bank_details %}
                         <div id="details-{{ forloop.counter }}" class="bank-info-card" style="display: none;">
                             <div class="info-group">
-                                <label>Método de Pagamento</label>
+                                <label>{% if bank.is_crypto %}Rede / Canal{% else %}Método de Pagamento{% endif %}</label>
                                 <div class="copy-input">
                                     <input type="text" value="{{ bank.bank_name }}" id="bank-name-{{ forloop.counter }}" readonly>
                                     <button type="button" class="copy-icon" onclick="copyText('bank-name-{{ forloop.counter }}')">📋</button>
                                 </div>
                             </div>
                             <div class="info-group">
-                                <label>Nome de Usuário</label>
+                                <label>{% if bank.is_crypto %}Descrição / Canal{% else %}Nome de Usuário{% endif %}</label>
                                 <div class="copy-input">
                                     <input type="text" value="{{ bank.account_holder_name }}" id="holder-{{ forloop.counter }}" readonly>
                                     <button type="button" class="copy-icon" onclick="copyText('holder-{{ forloop.counter }}')">📋</button>
                                 </div>
                             </div>
                             <div class="info-group">
-                                <label>Número da Conta (IBAN)</label>
+                                <label>{% if bank.is_crypto %}Endereço da Wallet{% else %}Número da Conta (IBAN){% endif %}</label>
                                 <div class="copy-input">
                                     <input type="text" value="{{ bank.IBAN }}" id="iban-{{ forloop.counter }}" readonly>
                                     <button type="button" class="copy-icon" onclick="copyText('iban-{{ forloop.counter }}')">📋</button>
@@ -163,7 +220,6 @@
         --error: #ff1744;
     }
 
-    /* Reset anti-rolagem horizontal */
     html, body {
         max-width: 100%;
         overflow-x: hidden;
@@ -202,7 +258,6 @@
         letter-spacing: 1px;
     }
 
-    /* Stepper fixo sem oscilações de tamanho */
     .stepper {
         display: flex;
         align-items: center;
@@ -265,7 +320,6 @@
         background: var(--glow-blue);
     }
 
-    /* Altura estável para evitar saltos ou quebras no ecrã ao alternar steps */
     .step-content {
         animation: fadeIn 0.2s ease-in-out;
     }
@@ -288,6 +342,33 @@
     .center-label {
         text-align: center;
         margin-bottom: 16px;
+    }
+
+    /* Abas de Método de Pagamento (Kwanza vs USDT) */
+    .payment-method-tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 20px;
+    }
+
+    .tab-btn {
+        flex: 1;
+        padding: 12px;
+        background: rgba(10, 17, 40, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        color: var(--text-muted);
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .tab-btn.active {
+        background: rgba(0, 210, 255, 0.12);
+        border-color: var(--glow-blue);
+        color: var(--glow-blue);
+        box-shadow: 0 0 10px rgba(0, 210, 255, 0.2);
     }
 
     .balance-card {
@@ -336,7 +417,6 @@
 
     .label-small { font-size: 13px; color: var(--text-muted); margin-bottom: 12px; font-weight: 500; }
     
-    /* Grid Responsiva e Segura para Ecrãs Pequenos */
     .grid-amounts {
         display: grid; 
         grid-template-columns: repeat(4, 1fr); 
@@ -379,6 +459,15 @@
         border-radius: 14px; 
     }
     
+    .usdt-warning-box {
+        background: rgba(0, 210, 255, 0.04);
+        border: 1px solid rgba(0, 210, 255, 0.2);
+        margin-bottom: 16px;
+        margin-top: 0;
+    }
+    .usdt-warning-box h4 { color: var(--glow-blue); }
+    .usdt-warning-box li span { background: rgba(0, 210, 255, 0.2); color: var(--glow-blue); }
+
     .info-rules h4 { margin: 0 0 12px 0; color: #ff5252; font-size: 14px; font-weight: 600; }
     .info-rules ul { list-style: none; padding: 0; margin: 0; }
     .info-rules li { margin-bottom: 10px; display: flex; align-items: flex-start; line-height: 1.4; }
@@ -433,7 +522,6 @@
     .info-group:last-child { margin-bottom: 0; }
     .info-group label { display: block; font-size: 11px; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
     
-    /* Layout indestrutível e responsivo para inputs com botão de copiar */
     .copy-input {
         display: flex; 
         align-items: center; 
@@ -447,7 +535,7 @@
     .copy-input input { 
         border: none; 
         padding: 12px; 
-        min-width: 0; /* Impede o input de estourar a largura do flex container */
+        min-width: 0;
         flex: 1; 
         outline: none; 
         font-size: 14px; 
@@ -462,7 +550,7 @@
         border: none; 
         width: 46px;
         height: 44px;
-        flex-shrink: 0; /* Garante que o botão NUNCA encolha ou fique oculto */
+        flex-shrink: 0; 
         cursor: pointer; 
         font-size: 16px;
         display: flex;
@@ -549,20 +637,70 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        const amountBtns = document.querySelectorAll('.amount-btn');
-        const bankBtns = document.querySelectorAll('.bank-option-btn');
+        const usdtRate = {{ usdt_rate|stringformat:"f" }};
+        let currentMethod = 'fiat'; // 'fiat' ou 'usdt'
+
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const panelFiat = document.getElementById('panel-fiat');
+        const panelUsdt = document.getElementById('panel-usdt');
+        
+        const manualAmountFiat = document.getElementById('manual-amount-fiat');
+        const manualAmountUsdt = document.getElementById('manual-amount-usdt');
+        
+        const gridFiatBtns = document.querySelectorAll('#grid-fiat .amount-btn');
+        const gridUsdtBtns = document.querySelectorAll('#grid-usdt .amount-btn');
+        
+        const amountInput = document.getElementById('id_amount'); // Guarda em Kwanza para o Django
+        const usdtAmountInput = document.getElementById('id_usdt_amount');
+        const paymentMethodInput = document.getElementById('id_payment_method');
+        
+        const bankInput = document.getElementById('id_selected_bank');
         const next1 = document.getElementById('to-step-2');
         const next2 = document.getElementById('to-step-3');
-        const amountInput = document.getElementById('id_amount');
-        const bankInput = document.getElementById('id_selected_bank');
-        const manualAmount = document.getElementById('manual-amount');
 
-        // Atualização de valor manual
-        manualAmount.addEventListener('input', (e) => {
+        // Inicializar botões rápidos de USDT calculados pelo câmbio da Wise
+        gridUsdtBtns.forEach(btn => {
+            const kwanzaVal = parseFloat(btn.dataset.kwanzaValue);
+            const usdtVal = (kwanzaVal / usdtRate).toFixed(2);
+            btn.innerText = usdtVal;
+            btn.dataset.usdtValue = usdtVal;
+            btn.dataset.kwanzaVal = kwanzaVal;
+        });
+
+        // Alternância de Abas (Kwanza vs USDT)
+        tabBtns.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabBtns.forEach(b => b.classList.remove('active'));
+                tab.classList.add('active');
+                currentMethod = tab.dataset.method;
+                paymentMethodInput.value = currentMethod;
+
+                // Resetar seleções de valores
+                manualAmountFiat.value = '';
+                manualAmountUsdt.value = '';
+                amountInput.value = '';
+                usdtAmountInput.value = '';
+                gridFiatBtns.forEach(b => b.classList.remove('active'));
+                gridUsdtBtns.forEach(b => b.classList.remove('active'));
+                next1.disabled = true;
+
+                if (currentMethod === 'usdt') {
+                    panelFiat.style.display = 'none';
+                    panelUsdt.style.display = 'block';
+                } else {
+                    panelUsdt.style.display = 'none';
+                    panelFiat.style.display = 'block';
+                }
+            });
+        });
+
+        // Input Manual Kwanza
+        manualAmountFiat.addEventListener('input', (e) => {
             const val = e.target.value;
-            amountBtns.forEach(b => b.classList.remove('active'));
+            gridFiatBtns.forEach(b => b.classList.remove('active'));
             if (val && parseFloat(val) > 0) {
                 amountInput.value = val;
+                usdtAmountInput.value = (parseFloat(val) / usdtRate).toFixed(2);
                 document.querySelectorAll('.display-final-amount').forEach(el => el.value = parseFloat(val).toFixed(2));
                 next1.disabled = false;
             } else {
@@ -570,25 +708,77 @@
             }
         });
 
-        // Botões rápidos de valor
-        amountBtns.forEach(btn => {
+        // Input Manual USDT
+        manualAmountUsdt.addEventListener('input', (e) => {
+            const val = e.target.value;
+            gridUsdtBtns.forEach(b => b.classList.remove('active'));
+            if (val && parseFloat(val) > 0) {
+                const calculatedKwanza = parseFloat(val) * usdtRate;
+                amountInput.value = calculatedKwanza.toFixed(2);
+                usdtAmountInput.value = val;
+                document.querySelectorAll('.display-final-amount').forEach(el => el.value = parseFloat(val).toFixed(2) + ' USDT');
+                next1.disabled = false;
+            } else {
+                next1.disabled = true;
+            }
+        });
+
+        // Botões rápidos Kwanza
+        gridFiatBtns.forEach(btn => {
             btn.addEventListener('click', () => {
-                amountBtns.forEach(b => b.classList.remove('active'));
+                gridFiatBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                manualAmount.value = '';
-                amountInput.value = btn.dataset.value;
-                document.querySelectorAll('.display-final-amount').forEach(el => el.value = parseFloat(btn.dataset.value).toFixed(2));
+                manualAmountFiat.value = '';
+                const val = btn.dataset.value;
+                amountInput.value = val;
+                usdtAmountInput.value = (parseFloat(val) / usdtRate).toFixed(2);
+                document.querySelectorAll('.display-final-amount').forEach(el => el.value = parseFloat(val).toFixed(2));
                 next1.disabled = false;
             });
         });
 
-        // Step 1 -> 2
+        // Botões rápidos USDT
+        gridUsdtBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                gridUsdtBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                manualAmountUsdt.value = '';
+                const usdtVal = btn.dataset.usdtValue;
+                const kwanzaVal = btn.dataset.kwanzaVal;
+                amountInput.value = kwanzaVal;
+                usdtAmountInput.value = usdtVal;
+                document.querySelectorAll('.display-final-amount').forEach(el => el.value = usdtVal + ' USDT');
+                next1.disabled = false;
+            });
+        });
+
+        // Step 1 -> 2 (Filtra os bancos/canais conforme o método selecionado)
         next1.addEventListener('click', () => {
+            const listFiat = document.getElementById('list-fiat');
+            const listUsdt = document.getElementById('list-usdt');
+            const bankStepLabel = document.getElementById('bank-step-label');
+            
+            // Limpa seleção anterior de banco
+            document.querySelectorAll('.bank-option-btn').forEach(b => b.classList.remove('active'));
+            bankInput.value = '';
+            next2.disabled = true;
+
+            if (currentMethod === 'usdt') {
+                listFiat.style.display = 'none';
+                listUsdt.style.display = 'block';
+                bankStepLabel.innerText = 'Escolha o Canal Cripto (USDT)';
+            } else {
+                listUsdt.style.display = 'none';
+                listFiat.style.display = 'block';
+                bankStepLabel.innerText = 'Escolha o Banco Destino';
+            }
+
             goToStep(2);
             updateStepper(2);
         });
 
-        // Seleção de Banco
+        // Seleção de Banco / Canal
+        const bankBtns = document.querySelectorAll('.bank-option-btn');
         bankBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 bankBtns.forEach(b => b.classList.remove('active'));
@@ -603,6 +793,10 @@
             const bankId = bankInput.value;
             document.querySelectorAll('.bank-info-card').forEach(card => card.style.display = 'none');
             document.getElementById(`details-${bankId}`).style.display = 'block';
+            
+            const transferLabel = document.getElementById('transfer-label');
+            transferLabel.innerText = (currentMethod === 'usdt') ? 'Dados para Pagamento em Cripto' : 'Dados para Transferência';
+
             goToStep(3);
             updateStepper(2);
         });
