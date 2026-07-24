@@ -18,6 +18,8 @@ from .models import PlatformSettings, CustomUser, Level, UserLevel, BankDetails,
 
 from .models import Post, PlatformSettings
 
+from django.contrib.admin.views.decorators import staff_member_required
+
 # --- FUNÇÃO HOME ---
 def home(request):
     if request.user.is_authenticated:
