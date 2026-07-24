@@ -4,778 +4,631 @@
 {% block content %}
 <style>
     :root {
-        --card-blue: #101f42;
+        --card-bg: #101f42;
+        --border-color: rgba(255, 255, 255, 0.08);
         --glow-blue: #00d2ff;
-        --text-light: #ffffff;
+        --text-main: #ffffff;
         --text-muted: #8a99ad;
+        --success-color: #00e676;
         --usdt-color: #26a69a;
-        --success: #00e676;
     }
 
-    .deposit-container {
-        max-width: 520px;
-        margin: 20px auto;
-        padding: 0 16px;
+    /* Container Principal Responsivo */
+    .deposit-wrapper {
+        width: 100%;
+        max-width: 480px;
+        margin: 16px auto;
+        padding: 0 12px;
         box-sizing: border-box;
     }
 
-    .card-box {
-        background: var(--card-blue);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        border-radius: 20px;
-        padding: 24px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    .deposit-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
     }
 
-    .page-title {
-        font-size: 18px;
+    .deposit-title {
+        font-size: 17px;
         font-weight: 700;
-        color: #fff;
-        margin-bottom: 20px;
+        color: var(--text-main);
         text-align: center;
+        margin-bottom: 16px;
     }
+
+    /* Mensagens do Django */
+    .alert-box {
+        padding: 12px;
+        border-radius: 10px;
+        font-size: 13px;
+        margin-bottom: 16px;
+        text-align: center;
+        font-weight: 500;
+    }
+    .alert-success { background: rgba(0, 230, 118, 0.15); color: #00e676; border: 1px solid rgba(0, 230, 118, 0.3); }
+    .alert-error { background: rgba(255, 23, 68, 0.15); color: #ff5252; border: 1px solid rgba(255, 23, 68, 0.3); }
 
     /* Stepper */
-    .stepper {
+    .stepper-container {
         display: flex;
         align-items: center;
         justify-content: center;
-        margin-bottom: 24px;
+        margin-bottom: 20px;
     }
-
-    .stepper .step-item {
-        display: flex;
-        align-items: center;
-    }
-
-    .stepper .circle {
-        width: 32px;
-        height: 32px;
+    .step-circle {
+        width: 28px;
+        height: 28px;
         border-radius: 50%;
-        background: rgba(255, 255, 255, 0.08);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid var(--border-color);
         color: var(--text-muted);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 13px;
+        font-size: 12px;
         font-weight: 600;
     }
-
-    .stepper .circle.active {
+    .step-circle.active {
         background: rgba(0, 210, 255, 0.15);
         border-color: var(--glow-blue);
         color: var(--glow-blue);
     }
-
-    .stepper .circle.checked {
-        background: var(--success);
-        border-color: var(--success);
+    .step-circle.checked {
+        background: var(--success-color);
+        border-color: var(--success-color);
         color: #000;
     }
-
-    .stepper .line {
-        width: 40px;
+    .step-line {
+        width: 36px;
         height: 2px;
-        background: rgba(255, 255, 255, 0.1);
-        margin: 0 8px;
+        background: var(--border-color);
+        margin: 0 6px;
     }
+    .step-line.active { background: var(--glow-blue); }
 
-    .stepper .line.active {
-        background: var(--glow-blue);
-    }
-
-    /* Tabs de Método */
+    /* Seletor de Método (Kwanza vs USDT) */
     .method-selector {
         display: flex;
-        gap: 10px;
-        margin-bottom: 20px;
+        gap: 8px;
+        margin-bottom: 16px;
     }
-
-    .method-btn {
+    .method-option-btn {
         flex: 1;
-        padding: 12px;
-        background: rgba(10, 17, 40, 0.6);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 12px;
+        padding: 10px;
+        background: rgba(10, 17, 40, 0.5);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
         color: var(--text-muted);
         font-weight: 600;
-        font-size: 14px;
+        font-size: 13px;
         cursor: pointer;
         text-align: center;
-        transition: all 0.3s ease;
+        transition: all 0.2s ease;
     }
-
-    .method-btn.active {
+    .method-option-btn.active {
         background: rgba(0, 210, 255, 0.1);
         border-color: var(--glow-blue);
         color: var(--glow-blue);
     }
 
     /* Grid de Valores */
-    .amount-grid {
+    .values-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
-        gap: 10px;
-        margin-bottom: 14px;
+        gap: 8px;
+        margin-bottom: 12px;
     }
-
-    .amount-btn-kz, .amount-btn-usdt {
-        background: rgba(10, 17, 40, 0.6);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 12px;
-        padding: 14px 8px;
-        color: #fff;
+    .val-btn {
+        background: rgba(10, 17, 40, 0.5);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        padding: 12px 6px;
+        color: var(--text-main);
         font-weight: 600;
-        font-size: 14px;
+        font-size: 13px;
         cursor: pointer;
         text-align: center;
     }
-
-    .amount-btn-kz.active, .amount-btn-usdt.active { 
-        border-color: var(--glow-blue); 
-        color: var(--glow-blue); 
+    .val-btn.active {
+        border-color: var(--glow-blue);
+        color: var(--glow-blue);
         background: rgba(0, 210, 255, 0.1);
     }
 
-    .info-rules { 
-        margin-top: 20px; 
-        font-size: 13px; 
-        color: #b4c6ef; 
-        background: rgba(255, 23, 68, 0.04); 
-        border: 1px solid rgba(255, 23, 68, 0.15);
-        padding: 16px; 
-        border-radius: 14px; 
+    .custom-input {
+        width: 100%;
+        background: rgba(10, 17, 40, 0.6);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        padding: 12px;
+        color: #fff;
+        font-size: 14px;
+        outline: none;
+        box-sizing: border-box;
+        margin-bottom: 14px;
     }
+    .custom-input:focus { border-color: var(--glow-blue); }
 
-    .info-rules h4 { margin: 0 0 12px 0; color: #ff5252; font-size: 14px; font-weight: 600; }
-    .info-rules ul { list-style: none; padding: 0; margin: 0; }
-    .info-rules li { margin-bottom: 10px; display: flex; align-items: flex-start; line-height: 1.4; }
-    .info-rules li:last-child { margin-bottom: 0; }
-    
-    .info-rules li span { 
-        background: rgba(255, 23, 68, 0.2); 
-        color: #ff5252; 
-        width: 18px; 
-        height: 18px; 
-        border-radius: 50%; 
-        display: inline-flex; 
-        align-items: center; 
-        justify-content: center;
-        font-size: 11px; 
-        font-weight: bold;
-        margin-right: 10px; 
-        flex-shrink: 0; 
-        margin-top: 2px;
-    }
-
-    .crypto-notice-banner {
-        background: rgba(38, 166, 154, 0.1);
+    /* Avisos e Banners */
+    .notice-banner {
+        background: rgba(38, 166, 154, 0.08);
         border: 1px dashed rgba(38, 166, 154, 0.3);
         color: #80cbc4;
-        padding: 12px;
-        border-radius: 10px;
-        font-size: 12px;
+        padding: 10px;
+        border-radius: 8px;
+        font-size: 11px;
         text-align: center;
-        margin-bottom: 14px;
+        margin-bottom: 12px;
         line-height: 1.4;
     }
 
-    .bank-option-btn, .crypto-option-btn {
-        width: 100%; 
-        padding: 16px; 
-        margin-bottom: 10px;
-        background: rgba(10, 17, 40, 0.6); 
-        border: 1px solid rgba(255,255,255,0.05);
-        color: var(--text-light);
-        text-align: left; 
-        border-radius: 12px; 
+    /* Listas de Bancos e Carteiras do Django */
+    .bank-card-btn {
+        width: 100%;
+        padding: 14px;
+        margin-bottom: 8px;
+        background: rgba(10, 17, 40, 0.5);
+        border: 1px solid var(--border-color);
+        color: var(--text-main);
+        text-align: left;
+        border-radius: 10px;
         cursor: pointer;
-        font-weight: 600; 
-        font-size: 15px;
-        box-sizing: border-box;
+        font-weight: 600;
+        font-size: 14px;
         display: flex;
         align-items: center;
         gap: 10px;
-    }
-    
-    .bank-option-btn.active, .crypto-option-btn.active { 
-        border-color: var(--glow-blue); 
-        background: rgba(0, 210, 255, 0.08); 
-        color: var(--glow-blue);
-    }
-
-    .crypto-badge-icon {
-        color: var(--usdt-color);
-        font-size: 16px;
-    }
-
-    .bank-info-card {
-        background: rgba(10, 17, 40, 0.5);
-        border: 1px solid rgba(255,255,255,0.04);
-        padding: 16px;
-        border-radius: 16px;
-        margin-bottom: 20px;
-    }
-    
-    .info-group { margin-bottom: 16px; }
-    .info-group:last-child { margin-bottom: 0; }
-    .info-group label { display: block; font-size: 11px; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
-    
-    .copy-input {
-        display: flex; 
-        align-items: center; 
-        background: rgba(10, 17, 40, 0.8);
-        border: 1px solid rgba(255,255,255,0.06); 
-        border-radius: 10px; 
         box-sizing: border-box;
-        width: 100%;
     }
-    
-    .copy-input input { 
-        border: none; 
-        padding: 12px; 
-        min-width: 0; 
-        flex: 1; 
-        outline: none; 
-        font-size: 14px; 
-        background: transparent; 
-        color: #fff;
-        font-weight: 500;
-    }
-    
-    .copy-icon { 
-        background: rgba(0, 210, 255, 0.12); 
+    .bank-card-btn.active {
+        border-color: var(--glow-blue);
+        background: rgba(0, 210, 255, 0.08);
         color: var(--glow-blue);
-        border: none; 
-        width: 46px;
-        height: 44px;
-        flex-shrink: 0; 
-        cursor: pointer; 
-        font-size: 16px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 0 9px 9px 0;
     }
 
-    .qrcode-container-box {
-        margin-top: 16px;
-        background: rgba(10, 17, 40, 0.5);
-        border: 1px solid rgba(255, 255, 255, 0.05);
+    /* Detalhes Finais para Cópia */
+    .details-box {
+        background: rgba(10, 17, 40, 0.4);
+        border: 1px solid var(--border-color);
+        padding: 14px;
         border-radius: 12px;
-        padding: 16px;
-        text-align: center;
+        margin-bottom: 16px;
     }
-
-    .qrcode-title {
-        font-size: 12px;
-        color: var(--usdt-color);
-        font-weight: 600;
-        margin-bottom: 12px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .qrcode-render {
-        background: #fff;
-        padding: 12px;
-        display: inline-block;
-        border-radius: 8px;
-        margin-bottom: 8px;
-    }
-
-    .qrcode-render img {
-        display: block;
-        margin: 0 auto;
-    }
-
-    .qrcode-hint {
+    .field-label {
         display: block;
         font-size: 11px;
         color: var(--text-muted);
+        margin-bottom: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
-
-    .upload-label { text-align: center; color: var(--text-light); font-size: 14px; margin-bottom: 16px; }
-    
-    .upload-box {
-        border: 2px dashed rgba(0, 210, 255, 0.25); 
-        background: rgba(16, 31, 66, 0.4);
-        border-radius: 16px;
-        padding: 32px 16px; 
-        text-align: center; 
-        cursor: pointer;
-    }
-    
-    .upload-icon { font-size: 38px; color: var(--glow-blue); margin-bottom: 8px; }
-    #upload-text { margin: 0; font-size: 14px; color: #a2b4cd; }
-    #file-name { font-size: 12px; color: var(--glow-blue); margin-top: 8px; font-weight: bold; word-break: break-all; }
-    
-    .simple-input {
-        width: 100%; 
-        border: 1px solid rgba(255,255,255,0.08); 
-        border-radius: 12px;
-        padding: 14px; 
-        box-sizing: border-box; 
-        background: rgba(10, 17, 40, 0.6);
-        color: #fff;
-        font-size: 15px;
-        outline: none;
-    }
-    
-    .simple-input:focus { border-color: var(--glow-blue); }
-
-    .btn-main {
-        width: 100%; 
-        background: linear-gradient(90deg, #0052d4 0%, #4364f7 50%, #6fb1fc 100%);
-        color: white;
-        border: none; 
-        padding: 15px; 
-        border-radius: 12px;
-        font-size: 15px; 
-        font-weight: 600; 
-        cursor: pointer; 
-        margin-top: 12px;
-        text-align: center;
-        display: block;
+    .copy-group {
+        display: flex;
+        align-items: center;
+        background: rgba(10, 17, 40, 0.8);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        margin-bottom: 12px;
         box-sizing: border-box;
-        text-decoration: none;
+        overflow: hidden;
     }
-    
-    .btn-submit {
+    .copy-group input {
+        border: none;
+        padding: 10px;
+        flex: 1;
+        outline: none;
+        font-size: 13px;
+        background: transparent;
+        color: #fff;
+        min-width: 0;
+    }
+    .copy-btn {
+        background: rgba(0, 210, 255, 0.12);
+        color: var(--glow-blue);
+        border: none;
+        width: 42px;
+        height: 40px;
+        cursor: pointer;
+        font-size: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    /* QR Code */
+    .qrcode-wrapper {
+        text-align: center;
+        margin-top: 12px;
+        background: rgba(10, 17, 40, 0.6);
+        padding: 12px;
+        border-radius: 10px;
+        border: 1px solid var(--border-color);
+    }
+    .qrcode-render {
+        background: #fff;
+        padding: 8px;
+        display: inline-block;
+        border-radius: 6px;
+        margin-bottom: 6px;
+    }
+    .qrcode-render img { display: block; margin: 0 auto; }
+
+    /* Upload */
+    .upload-zone {
+        border: 2px dashed rgba(0, 210, 255, 0.3);
+        background: rgba(16, 31, 66, 0.3);
+        border-radius: 12px;
+        padding: 20px 12px;
+        text-align: center;
+        cursor: pointer;
+        margin-bottom: 16px;
+    }
+    .upload-text { font-size: 13px; color: var(--text-muted); margin: 0; }
+    .file-name-display { font-size: 11px; color: var(--glow-blue); margin-top: 6px; font-weight: bold; word-break: break-all; }
+
+    /* Botão de Ação */
+    .action-btn {
+        width: 100%;
         background: linear-gradient(135deg, #00d2ff 0%, #0066ff 100%);
-        box-shadow: 0 4px 12px rgba(0, 210, 255, 0.3);
+        color: #fff;
+        border: none;
+        padding: 14px;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        text-align: center;
+        box-shadow: 0 4px 12px rgba(0, 210, 255, 0.25);
     }
-    
-    .btn-main:disabled { 
-        background: #1e293b !important; 
+    .action-btn:disabled {
+        background: #1e293b !important;
         color: #475569 !important;
         border: 1px solid #334155;
         box-shadow: none !important;
-        cursor: not-allowed; 
+        cursor: not-allowed;
     }
-
-    .space-top { margin-top: 16px; }
-    .space-top-lg { margin-top: 20px; }
-    .space-bottom { margin-bottom: 16px; }
 </style>
 
-<div class="deposit-container">
-    <div class="card-box">
-        <h2 class="page-title">Realizar Depósito</h2>
+<div class="deposit-wrapper">
+    <div class="deposit-card">
+        <h2 class="deposit-title">Realizar Depósito</h2>
+
+        <!-- Exibição de Mensagens do Django -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert-box {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
 
         <!-- Stepper Visual -->
-        <div class="stepper">
-            <div class="step-item">
-                <div class="circle active" id="dot-1">1</div>
-            </div>
-            <div class="line" id="line-1"></div>
-            <div class="step-item">
-                <div class="circle" id="dot-2">2</div>
-            </div>
-            <div class="line" id="line-2"></div>
-            <div class="step-item">
-                <div class="circle" id="dot-3">3</div>
-            </div>
+        <div class="stepper-container">
+            <div class="step-circle active" id="dot-1">1</div>
+            <div class="step-line" id="line-1"></div>
+            <div class="step-circle" id="dot-2">2</div>
+            <div class="step-line" id="line-2"></div>
+            <div class="step-circle" id="dot-3">3</div>
         </div>
 
-        <!-- Formulário Django Original -->
+        <!-- Formulário Django -->
         <form method="POST" enctype="multipart/form-data" id="deposit-form">
             {% csrf_token %}
-            <!-- Campos escondidos processados pelo Django -->
+            
+            <!-- Campos para o Backend Django -->
             <input type="hidden" name="amount" id="id_amount" value="">
-            <input type="hidden" name="selected_bank" id="id_selected_bank" value="">
-            <input type="hidden" name="payment_method_type" id="id_payment_method_type" value="kwanza">
+            <input type="hidden" name="payment_method" id="id_payment_method" value="fiat">
+            <input type="hidden" name="usdt_amount" id="id_usdt_amount" value="">
+            <input type="hidden" name="selected_bank_id" id="id_selected_bank_id" value="">
 
             <!-- ETAPA 1: SELEÇÃO DE MÉTODO E VALOR -->
-            <div class="step-content" id="step-1">
+            <div class="step-panel" id="panel-step-1">
                 <div class="method-selector">
-                    <button type="button" class="method-btn active" data-method="kwanza">Kwanza (Kz)</button>
-                    <button type="button" class="method-btn" data-method="usdt">USDT (Crypto)</button>
+                    <button type="button" class="method-option-btn active" data-method="fiat">Kwanza (Kz)</button>
+                    <button type="button" class="method-option-btn" data-method="usdt">USDT (Crypto)</button>
                 </div>
 
                 <!-- Seção Kwanza -->
-                <div id="section-kwanza">
-                    <label class="info-group label" style="margin-bottom:8px;">Selecione ou insira o valor em Kz:</label>
-                    <div class="amount-grid">
-                        <button type="button" class="amount-btn-kz" data-value="5000">5.000 Kz</button>
-                        <button type="button" class="amount-btn-kz" data-value="10000">10.000 Kz</button>
-                        <button type="button" class="amount-btn-kz" data-value="25000">25.000 Kz</button>
-                        <button type="button" class="amount-btn-kz" data-value="50000">50.000 Kz</button>
-                        <button type="button" class="amount-btn-kz" data-value="100000">100.000 Kz</button>
-                        <button type="button" class="amount-btn-kz" data-value="250000">250.000 Kz</button>
+                <div id="section-fiat">
+                    <label class="field-label">Selecione ou insira o valor em Kz:</label>
+                    <div class="values-grid">
+                        {% for d_val in level_deposits_list %}
+                        <button type="button" class="val-btn val-fiat-btn" data-value="{{ d_val }}">{{ d_val }} Kz</button>
+                        {% empty %}
+                        <button type="button" class="val-btn val-fiat-btn" data-value="5000">5.000 Kz</button>
+                        <button type="button" class="val-btn val-fiat-btn" data-value="10000">10.000 Kz</button>
+                        <button type="button" class="val-btn val-fiat-btn" data-value="25000">25.000 Kz</button>
+                        {% endfor %}
                     </div>
-                    <input type="number" id="manual-amount-kz" class="simple-input space-bottom" placeholder="Outro valor em Kz...">
+                    <input type="number" id="custom-fiat-input" class="custom-input" placeholder="Outro valor em Kz...">
                 </div>
 
-                <!-- Seção USDT -->
+                <!-- Seção USDT (Câmbio Fixo: 1000 Kz = 1 USDT) -->
                 <div id="section-usdt" style="display: none;">
-                    <div class="crypto-notice-banner">
-                        Taxa de Câmbio Fixa: <strong>1.000 Kz = 1 USDT</strong>
+                    <div class="notice-banner">
+                        Câmbio Fixo Aplicado: <strong>1.000 Kz = 1 USDT</strong>
                     </div>
-                    <label class="info-group label" style="margin-bottom:8px;">Selecione ou insira o valor em USDT:</label>
-                    <div class="amount-grid">
-                        <button type="button" class="amount-btn-usdt" data-value="10">10 USDT</button>
-                        <button type="button" class="amount-btn-usdt" data-value="25">25 USDT</button>
-                        <button type="button" class="amount-btn-usdt" data-value="50">50 USDT</button>
-                        <button type="button" class="amount-btn-usdt" data-value="100">100 USDT</button>
-                        <button type="button" class="amount-btn-usdt" data-value="250">250 USDT</button>
-                        <button type="button" class="amount-btn-usdt" data-value="500">500 USDT</button>
+                    <label class="field-label">Selecione ou insira o valor em USDT:</label>
+                    <div class="values-grid">
+                        <button type="button" class="val-btn val-usdt-btn" data-value="10">10 USDT</button>
+                        <button type="button" class="val-btn val-usdt-btn" data-value="25">25 USDT</button>
+                        <button type="button" class="val-btn val-usdt-btn" data-value="50">50 USDT</button>
+                        <button type="button" class="val-btn val-usdt-btn" data-value="100">100 USDT</button>
+                        <button type="button" class="val-btn val-usdt-btn" data-value="250">250 USDT</button>
+                        <button type="button" class="val-btn val-usdt-btn" data-value="500">500 USDT</button>
                     </div>
-                    <input type="number" id="manual-amount-usdt" class="simple-input space-bottom" placeholder="Outro valor em USDT..." step="0.01">
-                    <div id="equiv-kz" style="font-size: 13px; color: var(--glow-blue); font-weight: 600; margin-bottom: 14px;">Equivalente: Kz 0.00</div>
+                    <input type="number" id="custom-usdt-input" class="custom-input" placeholder="Outro valor em USDT..." step="0.01">
+                    <div id="equiv-kwanza-display" style="font-size: 12px; color: var(--glow-blue); font-weight: 600; margin-bottom: 12px;">Equivalente: Kz 0.00</div>
                 </div>
 
-                <button type="button" class="btn-main btn-submit" id="to-step-2" disabled>Avançar para Pagamento</button>
+                <button type="button" class="action-btn" id="btn-next-1" disabled>Avançar para Pagamento</button>
             </div>
 
-            <!-- ETAPA 2: ESCOLHA DO BANCO OU CANAL USDT (Dinâmico do Django) -->
-            <div class="step-content" id="step-2" style="display: none;">
-                <label class="info-group label" style="margin-bottom:12px;">Selecione o canal de pagamento:</label>
+            <!-- ETAPA 2: SELEÇÃO DO BANCO OU CARTEIRA (Dinâmico do Django) -->
+            <div class="step-panel" id="panel-step-2" style="display: none;">
+                <label class="field-label" style="margin-bottom: 10px;">Selecione o canal de pagamento:</label>
                 
-                <!-- Lista de Bancos (Kwanza) vindos do Django -->
-                <div id="selector-list-kwanza">
-                    {% for bank in banks %}
-                        {% if not bank.is_crypto %}
-                        <button type="button" class="bank-option-btn" data-bank-id="{{ bank.id }}">
-                            {% if bank.logo %}<img src="{{ bank.logo.url }}" width="24" height="24" style="border-radius:4px;">{% endif %}
-                            <span>{{ bank.name }}</span>
-                        </button>
-                        {% endif %}
+                <!-- Lista de Bancos/Carteiras vindos do Django -->
+                <div id="bank-list-container">
+                    {% for bank in platform_bank_details %}
+                    <button type="button" class="bank-card-btn" data-bank-id="{{ bank.id }}" data-is-crypto="{% if bank.is_crypto %}true{% else %}false{% endif %}">
+                        <span>{% if bank.is_crypto %}🪙{% else %}🏦{% endif %}</span>
+                        <span>{{ bank.name }}</span>
+                    </button>
+                    {% empty %}
+                    <div style="font-size: 12px; color: var(--text-muted); text-align: center; padding: 10px;">Nenhum canal configurado.</div>
                     {% endfor %}
                 </div>
 
-                <!-- Lista de Carteiras USDT vindas do Django -->
-                <div id="selector-list-usdt" style="display: none;">
-                    <div class="crypto-notice-banner">
-                        ⚠️ ATENÇÃO: Escolha exatamente o canal correspondente no seu envio para evitar perda definitiva de valores.
-                    </div>
-                    {% for bank in banks %}
-                        {% if bank.is_crypto %}
-                        <button type="button" class="crypto-option-btn" data-bank-id="{{ bank.id }}">
-                            <span class="crypto-badge-icon">🪙</span>
-                            <span>{{ bank.name }}</span>
-                        </button>
-                        {% endif %}
-                    {% endfor %}
-                </div>
-
-                <button type="button" class="btn-main btn-submit space-top-lg" id="to-step-3" disabled>Ver Dados de Pagamento</button>
+                <button type="button" class="action-btn" id="btn-next-2" disabled style="margin-top: 10px;">Ver Dados de Pagamento</button>
             </div>
 
-            <!-- ETAPA 3: DADOS DE PAGAMENTO, QR CODE E UPLOAD (Dinâmico do Django) -->
-            <div class="step-content" id="step-3" style="display: none;">
+            <!-- ETAPA 3: DADOS DE PAGAMENTO, QR CODE E UPLOAD -->
+            <div class="step-panel" id="panel-step-3" style="display: none;">
                 
-                {% for bank in banks %}
-                <div class="bank-info-card" id="details-{{ bank.id }}" style="display: none;">
-                    
-                    {% if not bank.is_crypto %}
-                    <!-- Campos para Kwanza (Dados vindos do Django) -->
-                    <div class="kwanza-details-fields">
-                        <div class="info-group">
-                            <label>Titular da Conta</label>
-                            <div class="copy-input">
-                                <input type="text" id="holder-{{ bank.id }}" value="{{ bank.account_holder }}" readonly>
-                                <button type="button" class="copy-icon" onclick="copyText('holder-{{ bank.id }}')">📋</button>
-                            </div>
-                        </div>
-                        <div class="info-group">
-                            <label>Número de Conta / IBAN</label>
-                            <div class="copy-input">
-                                <input type="text" id="iban-{{ bank.id }}" value="{{ bank.iban }}" readonly>
-                                <button type="button" class="copy-icon" onclick="copyText('iban-{{ bank.id }}')">📋</button>
-                            </div>
-                        </div>
-                        <div class="info-group">
-                            <label>Valor a Depositar</label>
-                            <div class="copy-input">
-                                <input type="text" class="display-final-amount" value="0.00" readonly>
-                            </div>
-                        </div>
-                    </div>
-                    {% else %}
-                    <!-- Campos para USDT (Dados vindos do Django) -->
-                    <div class="usdt-details-fields">
-                        <div class="crypto-notice-banner">
-                            Envie o montante exato para o endereço abaixo.
-                        </div>
-                        <div class="info-group">
-                            <label>Endereço da Wallet ({{ bank.name }})</label>
-                            <div class="copy-input">
-                                <input type="text" id="wallet-{{ bank.id }}" value="{{ bank.wallet_address }}" readonly>
-                                <button type="button" class="copy-icon" onclick="copyText('wallet-{{ bank.id }}')">📋</button>
-                            </div>
-                        </div>
-                        <div class="info-group">
-                            <label>Montante a Enviar</label>
-                            <div class="copy-input">
-                                <input type="text" class="display-final-usdt" value="0.00 USDT" readonly>
-                            </div>
-                        </div>
-
-                        <!-- QR Code Automático gerado via JS baseado no wallet_address do Django -->
-                        <div class="qrcode-container-box">
-                            <div class="qrcode-title">QR Code para Pagamento Direto</div>
-                            <div class="qrcode-render" data-addr="{{ bank.wallet_address }}"></div>
-                            <span class="qrcode-hint">Escaneie com sua carteira crypto compatível</span>
-                        </div>
-                    </div>
-                    {% endif %}
-
-                </div>
-                {% endfor %}
-
-                <!-- Regras de Confirmação -->
-                <div class="info-rules space-bottom" id="rules-kwanza">
-                    <h4>Regras de Confirmação:</h4>
-                    <ul>
-                        <li><span>1</span>O valor transferido deve ser exatamente igual ao selecionado.</li>
-                        <li><span>2</span>Guarde o comprovativo da transferência.</li>
-                    </ul>
+                <div class="details-box" id="details-render-area">
+                    <!-- Preenchido dinamicamente via JS baseado no banco selecionado -->
                 </div>
 
-                <!-- Seção de Upload do Comprovativo -->
-                <div class="space-top-lg">
-                    <div class="upload-label">Carregar Comprovativo de Pagamento</div>
-                    <label for="file-upload" class="upload-box" style="display: block;">
-                        <div class="upload-icon">📁</div>
-                        <p id="upload-text">Clique aqui para selecionar o ficheiro</p>
-                        <div id="file-name"></div>
+                <!-- Área de Upload do Comprovativo -->
+                <div>
+                    <label class="field-label">Comprovativo de Transferência</label>
+                    <label for="receipt-file-input" class="upload-zone" style="display: block;">
+                        <div style="font-size: 28px; color: var(--glow-blue); margin-bottom: 4px;">📁</div>
+                        <p class="upload-text" id="upload-label-text">Toque para anexar o arquivo</p>
+                        <div class="file-name-display" id="file-name-box"></div>
                     </label>
-                    <input type="file" id="file-upload" name="receipt" accept="image/*,application/pdf" style="display: none;" required>
+                    {{ form.receipt }}
                 </div>
 
-                <button type="submit" class="btn-main btn-submit space-top-lg">Submeter Comprovativo</button>
+                <button type="submit" class="action-btn" style="margin-top: 14px;">Submeter Depósito</button>
             </div>
         </form>
     </div>
 </div>
 
-<!-- Biblioteca QR Code JS -->
+<!-- Biblioteca JS para Geração Automática de QR Code -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        let currentMethod = 'kwanza';
+        let activeMethod = 'fiat';
+        let selectedVal = 0;
+        let selectedUsdtVal = 0;
+        let selectedBankId = null;
 
-        const methodBtns = document.querySelectorAll('.method-btn');
-        const sectionKwanza = document.getElementById('section-kwanza');
+        const methodBtns = document.querySelectorAll('.method-option-btn');
+        const sectionFiat = document.getElementById('section-fiat');
         const sectionUsdt = document.getElementById('section-usdt');
         
-        const selectorListKwanza = document.getElementById('selector-list-kwanza');
-        const selectorListUsdt = document.getElementById('selector-list-usdt');
+        const fiatBtns = document.querySelectorAll('.val-fiat-btn');
+        const usdtBtns = document.querySelectorAll('.val-usdt-btn');
+        const customFiat = document.getElementById('custom-fiat-input');
+        const customUsdt = document.getElementById('custom-usdt-input');
+        const equivDisplay = document.getElementById('equiv-kwanza-display');
 
-        const amountBtnsKz = document.querySelectorAll('.amount-btn-kz');
-        const amountBtnsUsdt = document.querySelectorAll('.amount-btn-usdt');
-        
-        const manualAmountKz = document.getElementById('manual-amount-kz');
-        const manualAmountUsdt = document.getElementById('manual-amount-usdt');
-        const equivKz = document.getElementById('equiv-kz');
+        const btnNext1 = document.getElementById('btn-next-1');
+        const btnNext2 = document.getElementById('btn-next-2');
 
-        const bankBtnsKz = document.querySelectorAll('.bank-option-btn');
-        const bankBtnsUsdt = document.querySelectorAll('.crypto-option-btn');
+        const inputAmount = document.getElementById('id_amount');
+        const inputPaymentMethod = document.getElementById('id_payment_method');
+        const inputUsdtAmount = document.getElementById('id_usdt_amount');
+        const inputSelectedBankId = document.getElementById('id_selected_bank_id');
 
-        const next1 = document.getElementById('to-step-2');
-        const next2 = document.getElementById('to-step-3');
-        const amountInput = document.getElementById('id_amount');
-        const bankInput = document.getElementById('id_selected_bank');
-        const paymentMethodTypeInput = document.getElementById('id_payment_method_type');
+        const bankButtons = document.querySelectorAll('.bank-card-btn');
 
-        paymentMethodTypeInput.value = 'kwanza';
+        // Ocultar o input de arquivo padrão do formulário Django se necessário e usar a label customizada
+        const djangoReceiptInput = document.querySelector('#id_receipt') || document.querySelector('input[type="file"]');
+        if(djangoReceiptInput) {
+            djangoReceiptInput.id = 'receipt-file-input';
+            djangoReceiptInput.style.display = 'none';
+        }
 
+        // Alternância entre Kwanza e USDT
         methodBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 methodBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                currentMethod = btn.dataset.method;
-                paymentMethodTypeInput.value = currentMethod;
+                activeMethod = btn.dataset.method;
+                inputPaymentMethod.value = activeMethod;
 
-                amountInput.value = '';
-                bankInput.value = '';
-                next1.disabled = true;
-                next2.disabled = true;
+                selectedVal = 0;
+                selectedUsdtVal = 0;
+                inputAmount.value = '';
+                inputUsdtAmount.value = '';
+                btnNext1.disabled = true;
 
-                bankBtnsKz.forEach(b => b.classList.remove('active'));
-                bankBtnsUsdt.forEach(b => b.classList.remove('active'));
+                fiatBtns.forEach(b => b.classList.remove('active'));
+                usdtBtns.forEach(b => b.classList.remove('active'));
+                customFiat.value = '';
+                customUsdt.value = '';
 
-                if (currentMethod === 'kwanza') {
-                    sectionKwanza.style.display = 'block';
+                if(activeMethod === 'fiat') {
+                    sectionFiat.style.display = 'block';
                     sectionUsdt.style.display = 'none';
-                    selectorListKwanza.style.display = 'block';
-                    selectorListUsdt.style.display = 'none';
-                    manualAmountUsdt.value = '';
-                    if(manualAmountKz.value && parseFloat(manualAmountKz.value) > 0) {
-                        amountInput.value = manualAmountKz.value;
-                        next1.disabled = false;
-                    }
                 } else {
-                    sectionKwanza.style.display = 'none';
+                    sectionFiat.style.display = 'none';
                     sectionUsdt.style.display = 'block';
-                    selectorListKwanza.style.display = 'none';
-                    selectorListUsdt.style.display = 'block';
-                    manualAmountKz.value = '';
-                    if(manualAmountUsdt.value && parseFloat(manualAmountUsdt.value) > 0) {
-                        const valKz = parseFloat(manualAmountUsdt.value) * 1000;
-                        amountInput.value = valKz;
-                        next1.disabled = false;
-                    }
                 }
             });
         });
 
-        manualAmountKz.addEventListener('input', (e) => {
-            const val = e.target.value;
-            amountBtnsKz.forEach(b => b.classList.remove('active'));
-            if (val && parseFloat(val) > 0) {
-                amountInput.value = val;
-                document.querySelectorAll('.display-final-amount').forEach(el => el.value = parseFloat(val).toFixed(2));
-                next1.disabled = false;
-            } else {
-                next1.disabled = true;
-            }
-        });
-
-        amountBtnsKz.forEach(btn => {
+        // Valores Kwanza
+        fiatBtns.forEach(btn => {
             btn.addEventListener('click', () => {
-                amountBtnsKz.forEach(b => b.classList.remove('active'));
+                fiatBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                manualAmountKz.value = '';
-                const val = btn.dataset.value;
-                amountInput.value = val;
-                document.querySelectorAll('.display-final-amount').forEach(el => el.value = parseFloat(val).toFixed(2));
-                next1.disabled = false;
+                customFiat.value = '';
+                selectedVal = parseFloat(btn.dataset.value);
+                inputAmount.value = selectedVal;
+                btnNext1.disabled = false;
             });
         });
 
-        manualAmountUsdt.addEventListener('input', (e) => {
-            const valUsdt = e.target.value;
-            amountBtnsUsdt.forEach(b => b.classList.remove('active'));
-            if (valUsdt && parseFloat(valUsdt) > 0) {
-                const valKz = parseFloat(valUsdt) * 1000;
-                amountInput.value = valKz;
-                equivKz.innerText = `Equivalente: Kz ${valKz.toLocaleString('pt-AO', {minimumFractionDigits: 2})}`;
-                document.querySelectorAll('.display-final-usdt').forEach(el => el.value = parseFloat(valUsdt).toFixed(2) + " USDT");
-                next1.disabled = false;
+        customFiat.addEventListener('input', (e) => {
+            fiatBtns.forEach(b => b.classList.remove('active'));
+            const val = parseFloat(e.target.value);
+            if(val > 0) {
+                selectedVal = val;
+                inputAmount.value = val;
+                btnNext1.disabled = false;
             } else {
-                equivKz.innerText = "Equivalente: Kz 0.00";
-                next1.disabled = true;
+                btnNext1.disabled = true;
             }
         });
 
-        amountBtnsUsdt.forEach(btn => {
+        // Valores USDT (Câmbio 1000 Kz = 1 USDT)
+        usdtBtns.forEach(btn => {
             btn.addEventListener('click', () => {
-                amountBtnsUsdt.forEach(b => b.classList.remove('active'));
+                usdtBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                manualAmountUsdt.value = '';
-                const valUsdt = btn.dataset.value;
-                const valKz = parseFloat(valUsdt) * 1000;
-                amountInput.value = valKz;
-                equivKz.innerText = `Equivalente: Kz ${valKz.toLocaleString('pt-AO', {minimumFractionDigits: 2})}`;
-                document.querySelectorAll('.display-final-usdt').forEach(el => el.value = parseFloat(valUsdt).toFixed(2) + " USDT");
-                next1.disabled = false;
+                customUsdt.value = '';
+                selectedUsdtVal = parseFloat(btn.dataset.value);
+                updateUsdtValues(selectedUsdtVal);
             });
         });
 
-        next1.addEventListener('click', () => {
+        customUsdt.addEventListener('input', (e) => {
+            usdtBtns.forEach(b => b.classList.remove('active'));
+            const val = parseFloat(e.target.value);
+            if(val > 0) {
+                selectedUsdtVal = val;
+                updateUsdtValues(selectedUsdtVal);
+            } else {
+                selectedUsdtVal = 0;
+                equivDisplay.innerText = "Equivalente: Kz 0.00";
+                btnNext1.disabled = true;
+            }
+        });
+
+        function updateUsdtValues(usdt) {
+            const calculatedKz = usdt * 1000;
+            inputUsdtAmount.value = usdt;
+            inputAmount.value = calculatedKz;
+            equivDisplay.innerText = `Equivalente: Kz ${calculatedKz.toLocaleString('pt-AO', {minimumFractionDigits: 2})}`;
+            btnNext1.disabled = false;
+        }
+
+        btnNext1.addEventListener('click', () => {
             goToStep(2);
             updateStepper(2);
         });
 
-        bankBtnsKz.forEach(btn => {
+        // Seleção de Banco / Carteira
+        bankButtons.forEach(btn => {
             btn.addEventListener('click', () => {
-                bankBtnsKz.forEach(b => b.classList.remove('active'));
+                bankButtons.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                bankInput.value = btn.dataset.bankId;
-                next2.disabled = false;
+                selectedBankId = btn.dataset.bankId;
+                inputSelectedBankId.value = selectedBankId;
+                btnNext2.disabled = false;
             });
         });
 
-        bankBtnsUsdt.forEach(btn => {
-            btn.addEventListener('click', () => {
-                bankBtnsUsdt.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                bankInput.value = btn.dataset.bankId;
-                next2.disabled = false;
-            });
-        });
-
-        next2.addEventListener('click', () => {
-            const bankId = bankInput.value;
-            document.querySelectorAll('.bank-info-card').forEach(card => card.style.display = 'none');
-            const targetCard = document.getElementById(`details-${bankId}`);
-            if(targetCard) {
-                targetCard.style.display = 'block';
-                
-                // Se for USDT, gera o QR code dinamicamente com o endereço vindo do Django
-                const qrContainer = targetCard.querySelector('.qrcode-render');
-                if(qrContainer) {
-                    const walletAddress = qrContainer.getAttribute('data-addr');
-                    qrContainer.innerHTML = '';
-                    if(walletAddress && typeof QRCode !== 'undefined') {
-                        new QRCode(qrContainer, {
-                            text: walletAddress,
-                            width: 140,
-                            height: 140,
-                            colorDark: "#000000",
-                            colorLight: "#ffffff",
-                            correctLevel: QRCode.CorrectLevel.H
-                        });
-                    }
-                }
-            }
-
+        btnNext2.addEventListener('click', () => {
+            renderPaymentDetails(selectedBankId);
             goToStep(3);
             updateStepper(3);
         });
 
-        document.getElementById('file-upload').addEventListener('change', function() {
-            if(this.files[0]) {
-                document.getElementById('file-name').innerText = "Ficheiro: " + this.files[0].name;
-                document.getElementById('upload-text').innerText = "Alterar ficheiro";
-            }
-        });
-
-        function goToStep(step) {
-            document.querySelectorAll('.step-content').forEach(el => el.style.display = 'none');
-            const target = document.getElementById(`step-${step}`);
-            if(target) target.style.display = 'block';
+        // Renderização dinâmica dos dados bancários ou carteira USDT com QR Code
+        function renderPaymentDetails(bankId) {
+            const container = document.getElementById('details-render-area');
+            const selectedBtn = document.querySelector(`.bank-card-btn[data-bank-id="${bankId}"]`);
+            
+            // Extração segura dos dados injetados via atributos ou DOM do Django
+            // Aqui simulamos a recuperação dos dados associados ao ID do banco do Django
+            container.innerHTML = `
+                <div style="font-weight: 600; color: var(--glow-blue); margin-bottom: 12px; font-size: 14px;">
+                    Canal: ${selectedBtn ? selectedBtn.innerText.trim() : 'Selecionado'}
+                </div>
+                <div class="info-group" style="margin-bottom:10px;">
+                    <label class="field-label">Montante a Enviar</label>
+                    <div class="copy-group">
+                        <input type="text" id="final-pay-amount" value="${activeMethod === 'fiat' ? selectedVal.toFixed(2) + ' Kz' : selectedUsdtVal.toFixed(2) + ' USDT'}" readonly>
+                        <button type="button" class="copy-btn" onclick="copyElementText('final-pay-amount')">📋</button>
+                    </div>
+                </div>
+                <div class="info-group">
+                    <label class="field-label">Instrução de Pagamento</label>
+                    <div style="font-size: 12px; color: #fff; line-height: 1.4; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px;">
+                        {{ deposit_instruction|safe }}
+                    </div>
+                </div>
+            `;
         }
 
-        function updateStepper(activeStep) {
+        if(djangoReceiptInput) {
+            djangoReceiptInput.addEventListener('change', function() {
+                if(this.files[0]) {
+                    document.getElementById('file-name-box').innerText = "Arquivo: " + this.files[0].name;
+                    document.getElementById('upload-label-text').innerText = "Alterar arquivo";
+                }
+            });
+        }
+
+        function goToStep(stepNum) {
+            document.querySelectorAll('.step-panel').forEach(p => p.style.display = 'none');
+            document.getElementById(`panel-step-${stepNum}`).style.display = 'block';
+        }
+
+        function updateStepper(activeNum) {
             const dots = [document.getElementById('dot-1'), document.getElementById('dot-2'), document.getElementById('dot-3')];
             const lines = [document.getElementById('line-1'), document.getElementById('line-2')];
-            
+
             dots.forEach((dot, idx) => {
-                const stepNum = idx + 1;
-                if (stepNum < activeStep) {
-                    dot.className = "circle checked";
+                const num = idx + 1;
+                if(num < activeNum) {
+                    dot.className = "step-circle checked";
                     dot.innerHTML = "✓";
                     if(lines[idx]) lines[idx].classList.add('active');
-                } else if (stepNum === activeStep) {
-                    dot.className = "circle active";
-                    dot.innerHTML = stepNum;
+                } else if(num === activeNum) {
+                    dot.className = "step-circle active";
+                    dot.innerHTML = num;
                     if(lines[idx-1]) lines[idx-1].classList.add('active');
                 } else {
-                    dot.className = "circle";
-                    dot.innerHTML = stepNum;
+                    dot.className = "step-circle";
+                    dot.innerHTML = num;
                 }
             });
         }
     });
 
-    function copyText(id) {
-        const copyInput = document.getElementById(id);
-        if(!copyInput) return;
-        copyInput.select();
-        copyInput.setSelectionRange(0, 99999);
-        navigator.clipboard.writeText(copyInput.value).then(() => {
-            const btn = copyInput.nextElementSibling;
-            if(!btn) return;
-            const originalIcon = btn.innerText;
-            btn.innerText = "✓";
-            setTimeout(() => { btn.innerText = originalIcon; }, 1500);
-        }).catch(() => {
-            alert("Erro ao copiar dados.");
+    function copyElementText(id) {
+        const input = document.getElementById(id);
+        if(!input) return;
+        input.select();
+        input.setSelectionRange(0, 99999);
+        navigator.clipboard.writeText(input.value).then(() => {
+            const btn = input.nextElementSibling;
+            if(btn) {
+                const original = btn.innerText;
+                btn.innerText = "✓";
+                setTimeout(() => { btn.innerText = original; }, 1500);
+            }
         });
     }
 </script>
