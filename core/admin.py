@@ -56,8 +56,10 @@ class BankDetailsAdmin(admin.ModelAdmin):
 
 @admin.register(PlatformBankDetails)
 class PlatformBankDetailsAdmin(admin.ModelAdmin):
-    list_display = ('bank_name', 'account_holder_name')
-    search_fields = ('bank_name', 'account_holder_name')
+    list_display = ('bank_name', 'IBAN', 'account_holder_name', 'is_crypto')
+    list_filter = ('is_crypto',)
+    search_fields = ('bank_name', 'IBAN', 'account_holder_name')
+    list_editable = ('is_crypto',)
 
 # --- TRANSAÇÕES ---
 @admin.register(Deposit)

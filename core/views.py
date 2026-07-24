@@ -106,7 +106,12 @@ def user_logout(request):
 @login_required
 def deposito(request):
     platform_bank_details = PlatformBankDetails.objects.all()
-    deposit_instruction = PlatformSettings.objects.first().deposit_instruction if PlatformSettings.objects.first() else 'Instruções de depósito não disponíveis.'
+    
+    # Busca configurações da plataforma (instruções e cotação do USDT)
+    platform_settings = PlatformSettings.objects.first()
+    deposit_instruction = platform_settings.deposit_instruction if platform_settings else 'Instruções de depósito não disponíveis.'
+    usdt_rate = platform_settings.usdt_rate if platform_settings and hasattr(platform_settings, 'usdt_rate') and platform_settings.usdt_rate else 5.50  # Valor padrão caso não configurado
+    
     level_deposits = Level.objects.all().values_list('deposit_value', flat=True).distinct().order_by('deposit_value')
     level_deposits_list = [str(d) for d in level_deposits] 
 
@@ -115,11 +120,21 @@ def deposito(request):
         if form.is_valid():
             deposit = form.save(commit=False)
             deposit.user = request.user
+            
+            # Lógica interativa para USDT
+            payment_method = request.POST.get('payment_method', 'fiat')  # Exemplo de campo para identificar o método no form
+            if payment_method == 'usdt' or getattr(deposit, 'is_usdt', False):
+                deposit.is_usdt = True
+                # Se o usuário informou o valor em USDT, converte para a moeda base usando a cotação atual
+                if hasattr(deposit, 'usdt_amount') and deposit.usdt_amount:
+                    deposit.amount = deposit.usdt_amount * usdt_rate
+            
             deposit.save()
             return render(request, 'deposito.html', {
                 'platform_bank_details': platform_bank_details,
                 'deposit_instruction': deposit_instruction,
                 'level_deposits_list': level_deposits_list,
+                'usdt_rate': usdt_rate,
                 'deposit_success': True 
             })
         else:
@@ -131,6 +146,7 @@ def deposito(request):
         'deposit_instruction': deposit_instruction,
         'form': form,
         'level_deposits_list': level_deposits_list,
+        'usdt_rate': usdt_rate,
         'deposit_success': False,
     }
     return render(request, 'deposito.html', context)
@@ -145,7 +161,7 @@ def approve_deposit(request, deposit_id):
         deposit.save()
         deposit.user.available_balance += deposit.amount
         deposit.user.save()
-        messages.success(request, 'Depósito aprovado.')
+        messages.success(request, 'Depósito aprovado com sucesso.')
     return redirect('renda')
 
 # --- SAQUE ---

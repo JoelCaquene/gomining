@@ -68,16 +68,17 @@ class PlatformSettings(models.Model):
         return "Configurações da Plataforma"
 
 class PlatformBankDetails(models.Model):
-    bank_name = models.CharField(max_length=100, verbose_name="Nome do Banco")
-    IBAN = models.CharField(max_length=50, verbose_name="IBAN")
-    account_holder_name = models.CharField(max_length=100, verbose_name="Nome do Titular")
+    bank_name = models.CharField(max_length=100, verbose_name="Nome do Banco / Rede USDT")
+    IBAN = models.CharField(max_length=150, verbose_name="IBAN / Endereço da Wallet")
+    account_holder_name = models.CharField(max_length=100, verbose_name="Nome do Titular / Descrição do Canal", blank=True, null=True)
+    is_crypto = models.BooleanField(default=False, verbose_name="É Canal USDT/Crypto?")
 
     class Meta:
         verbose_name = "Detalhe Bancário da Plataforma"
         verbose_name_plural = "Detalhes Bancários da Plataforma"
     
     def __str__(self):
-        return f"{self.bank_name} - {self.account_holder_name}"
+        return f"{self.bank_name} - {self.account_holder_name or self.IBAN}"
 
 class BankDetails(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, verbose_name="Usuário")
