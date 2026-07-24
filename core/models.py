@@ -36,6 +36,10 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     level_active = models.BooleanField(default=False, verbose_name="Nível Ativo")
     roulette_spins = models.IntegerField(default=0, verbose_name="Giros da Roleta")
 
+    # --- CAMPOS ADICIONADOS PARA RESOLVER O ERRO DO USDT NO PERFIL ---
+    usdt_channel = models.CharField(max_length=50, blank=True, null=True, verbose_name="Canal USDT (Ex: TRC20)")
+    usdt_address = models.CharField(max_length=255, blank=True, null=True, verbose_name="Endereço da Wallet USDT")
+
     USERNAME_FIELD = 'phone_number'
     REQUIRED_FIELDS = []
 
@@ -72,6 +76,7 @@ class PlatformBankDetails(models.Model):
     IBAN = models.CharField(max_length=150, verbose_name="IBAN / Endereço da Wallet")
     account_holder_name = models.CharField(max_length=100, verbose_name="Nome do Titular / Descrição do Canal", blank=True, null=True)
     is_crypto = models.BooleanField(default=False, verbose_name="É Canal USDT/Crypto?")
+    is_active = models.BooleanField(default=True, verbose_name="Ativo para Depósito")
 
     class Meta:
         verbose_name = "Detalhe Bancário da Plataforma"
@@ -82,9 +87,9 @@ class PlatformBankDetails(models.Model):
 
 class BankDetails(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, verbose_name="Usuário")
-    bank_name = models.CharField(max_length=100, verbose_name="Nome do Banco")
-    IBAN = models.CharField(max_length=50, verbose_name="IBAN")
-    account_holder_name = models.CharField(max_length=100, verbose_name="Nome do Titular")
+    bank_name = models.CharField(max_length=100, verbose_name="Nome do Banco", blank=True, null=True)
+    IBAN = models.CharField(max_length=50, verbose_name="IBAN", blank=True, null=True)
+    account_holder_name = models.CharField(max_length=100, verbose_name="Nome do Titular", blank=True, null=True)
     
     class Meta:
         verbose_name = "Detalhe Bancário do Usuário"
