@@ -107,84 +107,81 @@ def user_logout(request):
 # --- DEPÓSITO ---
 @login_required
 def deposito(request):
-  platform_bank_details = PlatformBankDetails.objects.all()
+    platform_bank_details = PlatformBankDetails.objects.all()
 
-  # Busca configurações da plataforma
-  platform_settings = PlatformSettings.objects.first()
-  deposit_instruction = (
-      platform_settings.deposit_instruction
-      if platform_settings
-      else 'Instruções de depósito não disponíveis.'
-  )
-  usdt_rate = (
-      platform_settings.usdt_rate
-      if platform_settings
-      and hasattr(platform_settings, 'usdt_rate')
-      and platform_settings.usdt_rate
-      else 5.50
-  )
+    # Busca configurações da plataforma
+    platform_settings = PlatformSettings.objects.first()
+    deposit_instruction = (
+        platform_settings.deposit_instruction
+        if platform_settings
+        else 'Instruções de depósito não disponíveis.'
+    )
+    usdt_rate = (
+        platform_settings.usdt_rate
+        if platform_settings
+        and hasattr(platform_settings, 'usdt_rate')
+        and platform_settings.usdt_rate
+        else 5.50
+    )
 
-  level_deposits = (
-      Level.objects.all()
-      .values_list('deposit_value', flat=True)
-      .distinct()
-      .order_by('deposit_value')
-  )
-  level_deposits_list = [str(d) for d in level_deposits]
+    level_deposits = (
+        Level.objects.all()
+        .values_list('deposit_value', flat=True)
+        .distinct()
+        .order_by('deposit_value')
+    )
+    level_deposits_list = [str(d) for d in level_deposits]
 
-  deposit_success = False
+    if request.method == 'POST':
+        form = DepositForm(request.POST, request.FILES)
+        if form.is_valid():
+            deposit = form.save(commit=False)
+            deposit.user = request.user
 
-  if request.method == 'POST':
-    form = DepositForm(request.POST, request.FILES)
-    if form.is_valid():
-      deposit = form.save(commit=False)
-      deposit.user = request.user
+            # Lógica interativa para USDT
+            payment_method = request.POST.get('payment_method', 'fiat')
+            if payment_method == 'usdt' or getattr(deposit, 'is_usdt', False):
+                deposit.is_usdt = True
+                usdt_amount = form.cleaned_data.get('usdt_amount')
+                if usdt_amount:
+                    deposit.amount = usdt_amount * usdt_rate
 
-      # Lógica interativa para USDT
-      payment_method = request.POST.get('payment_method', 'fiat')
-      if payment_method == 'usdt' or getattr(deposit, 'is_usdt', False):
-        deposit.is_usdt = True
-        if hasattr(deposit, 'usdt_amount') and deposit.usdt_amount:
-          deposit.amount = deposit.usdt_amount * usdt_rate
-
-      deposit.save()
-      messages.success(request, 'Depósito enviado com sucesso para análise.')
-      return redirect(
-          'deposito'
-      )  # Evita duplicidade de envio ao atualizar a página
+            deposit.save()
+            messages.success(request, 'Depósito enviado com sucesso para análise.')
+            return redirect('deposito')
+        else:
+            messages.error(request, 'Erro ao enviar o depósito. Verifique os campos.')
     else:
-      messages.error(request, 'Erro ao enviar o depósito. Verifique os campos.')
-  else:
-    form = DepositForm()
+        form = DepositForm()
 
-  context = {
-      'platform_bank_details': platform_bank_details,
-      'deposit_instruction': deposit_instruction,
-      'form': form,
-      'level_deposits_list': level_deposits_list,
-      'usdt_rate': usdt_rate,
-  }
-  return render(request, 'deposito.html', context)
+    context = {
+        'platform_bank_details': platform_bank_details,
+        'deposit_instruction': deposit_instruction,
+        'form': form,
+        'level_deposits_list': level_deposits_list,
+        'usdt_rate': usdt_rate,
+    }
+    return render(request, 'deposito.html', context)
 
 
 @staff_member_required
 def approve_deposit(request, deposit_id):
-  deposit = get_object_or_404(Deposit, id=deposit_id)
+    deposit = get_object_or_404(Deposit, id=deposit_id)
 
-  if not deposit.is_approved:
-    with transaction.atomic():
-      deposit.is_approved = True
-      deposit.save()
+    if not deposit.is_approved:
+        with transaction.atomic():
+            deposit.is_approved = True
+            deposit.save()
 
-      # Atualiza o saldo do usuário com segurança atômica
-      deposit.user.available_balance += deposit.amount
-      deposit.user.save()
+            # Atualiza o saldo do usuário com segurança atômica
+            deposit.user.available_balance += deposit.amount
+            deposit.user.save()
 
-    messages.success(request, 'Depósito aprovado com sucesso.')
-  else:
-    messages.warning(request, 'Este depósito já havia sido aprovado.')
+        messages.success(request, 'Depósito aprovado com sucesso.')
+    else:
+        messages.warning(request, 'Este depósito já havia sido aprovado.')
 
-  return redirect('renda')
+    return redirect('renda')
 
 # --- SAQUE ---
 @login_required
