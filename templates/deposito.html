@@ -12,6 +12,126 @@
         --success: #00e676;
     }
 
+    .deposit-container {
+        max-width: 520px;
+        margin: 20px auto;
+        padding: 0 16px;
+        box-sizing: border-box;
+    }
+
+    .card-box {
+        background: var(--card-blue);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 20px;
+        padding: 24px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    .page-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #fff;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+
+    /* Stepper */
+    .stepper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 24px;
+    }
+
+    .stepper .step-item {
+        display: flex;
+        align-items: center;
+    }
+
+    .stepper .circle {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .stepper .circle.active {
+        background: rgba(0, 210, 255, 0.15);
+        border-color: var(--glow-blue);
+        color: var(--glow-blue);
+    }
+
+    .stepper .circle.checked {
+        background: var(--success);
+        border-color: var(--success);
+        color: #000;
+    }
+
+    .stepper .line {
+        width: 40px;
+        height: 2px;
+        background: rgba(255, 255, 255, 0.1);
+        margin: 0 8px;
+    }
+
+    .stepper .line.active {
+        background: var(--glow-blue);
+    }
+
+    /* Tabs de Método (Kwanza vs USDT) */
+    .method-selector {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+
+    .method-btn {
+        flex: 1;
+        padding: 12px;
+        background: rgba(10, 17, 40, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        color: var(--text-muted);
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+
+    .method-btn.active {
+        background: rgba(0, 210, 255, 0.1);
+        border-color: var(--glow-blue);
+        color: var(--glow-blue);
+    }
+
+    /* Grid de Valores */
+    .amount-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin-bottom: 14px;
+    }
+
+    .amount-btn-kz, .amount-btn-usdt {
+        background: rgba(10, 17, 40, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        padding: 14px 8px;
+        color: #fff;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        text-align: center;
+    }
+
     .amount-btn-kz.active, .amount-btn-usdt.active { 
         border-color: var(--glow-blue); 
         color: var(--glow-blue); 
@@ -72,7 +192,7 @@
         width: 100%; 
         padding: 16px; 
         margin-bottom: 10px;
-        background: var(--card-blue); 
+        background: rgba(10, 17, 40, 0.6); 
         border: 1px solid rgba(255,255,255,0.05);
         color: var(--text-light);
         text-align: left; 
@@ -98,7 +218,7 @@
     }
 
     .bank-info-card {
-        background: var(--card-blue);
+        background: rgba(10, 17, 40, 0.5);
         border: 1px solid rgba(255,255,255,0.04);
         padding: 16px;
         border-radius: 16px;
@@ -112,7 +232,7 @@
     .copy-input {
         display: flex; 
         align-items: center; 
-        background: rgba(10, 17, 40, 0.6);
+        background: rgba(10, 17, 40, 0.8);
         border: 1px solid rgba(255,255,255,0.06); 
         border-radius: 10px; 
         box-sizing: border-box;
@@ -260,9 +380,238 @@
     .success-screen p { color: var(--text-muted); font-size: 14px; line-height: 1.5; margin-bottom: 24px; }
 </style>
 
+<div class="deposit-container">
+    <div class="card-box">
+        <h2 class="page-title">Realizar Depósito</h2>
+
+        <!-- Stepper Visual -->
+        <div class="stepper">
+            <div class="step-item">
+                <div class="circle active" id="dot-1">1</div>
+            </div>
+            <div class="line" id="line-1"></div>
+            <div class="step-item">
+                <div class="circle" id="dot-2">2</div>
+            </div>
+            <div class="line" id="line-2"></div>
+            <div class="step-item">
+                <div class="circle" id="dot-3">3</div>
+            </div>
+        </div>
+
+        <!-- Formulário Django Original -->
+        <form method="POST" enctype="multipart/form-data" id="deposit-form">
+            {% csrf_token %}
+            <!-- Campos escondidos processados pelo Django -->
+            <input type="hidden" name="amount" id="id_amount" value="">
+            <input type="hidden" name="selected_bank" id="id_selected_bank" value="">
+            <input type="hidden" name="payment_method_type" id="id_payment_method_type" value="kwanza">
+
+            <!-- ETAPA 1: SELEÇÃO DE MÉTODO E VALOR -->
+            <div class="step-content" id="step-1">
+                <div class="method-selector">
+                    <button type="button" class="method-btn active" data-method="kwanza">Kwanza (Kz)</button>
+                    <button type="button" class="method-btn" data-method="usdt">USDT (Crypto)</button>
+                </div>
+
+                <!-- Seção Kwanza -->
+                <div id="section-kwanza">
+                    <label class="info-group label" style="margin-bottom:8px;">Selecione ou insira o valor em Kz:</label>
+                    <div class="amount-grid">
+                        <button type="button" class="amount-btn-kz" data-value="5000">5.000 Kz</button>
+                        <button type="button" class="amount-btn-kz" data-value="10000">10.000 Kz</button>
+                        <button type="button" class="amount-btn-kz" data-value="25000">25.000 Kz</button>
+                        <button type="button" class="amount-btn-kz" data-value="50000">50.000 Kz</button>
+                        <button type="button" class="amount-btn-kz" data-value="100000">100.000 Kz</button>
+                        <button type="button" class="amount-btn-kz" data-value="250000">250.000 Kz</button>
+                    </div>
+                    <input type="number" id="manual-amount-kz" class="simple-input space-bottom" placeholder="Outro valor em Kz...">
+                </div>
+
+                <!-- Seção USDT -->
+                <div id="section-usdt" style="display: none;">
+                    <div class="crypto-notice-banner">
+                        Taxa de Câmbio Fixa: <strong>1.000 Kz = 1 USDT</strong>
+                    </div>
+                    <label class="info-group label" style="margin-bottom:8px;">Selecione ou insira o valor em USDT:</label>
+                    <div class="amount-grid">
+                        <button type="button" class="amount-btn-usdt" data-value="10">10 USDT</button>
+                        <button type="button" class="amount-btn-usdt" data-value="25">25 USDT</button>
+                        <button type="button" class="amount-btn-usdt" data-value="50">50 USDT</button>
+                        <button type="button" class="amount-btn-usdt" data-value="100">100 USDT</button>
+                        <button type="button" class="amount-btn-usdt" data-value="250">250 USDT</button>
+                        <button type="button" class="amount-btn-usdt" data-value="500">500 USDT</button>
+                    </div>
+                    <input type="number" id="manual-amount-usdt" class="simple-input space-bottom" placeholder="Outro valor em USDT..." step="0.01">
+                    <div id="equiv-kz" style="font-size: 13px; color: var(--glow-blue); font-weight: 600; margin-bottom: 14px;">Equivalente: Kz 0.00</div>
+                </div>
+
+                <button type="button" class="btn-main btn-submit" id="to-step-2" disabled>Avançar para Pagamento</button>
+            </div>
+
+            <!-- ETAPA 2: ESCOLHA DO BANCO OU CANAL USDT -->
+            <div class="step-content" id="step-2" style="display: none;">
+                <label class="info-group label" style="margin-bottom:12px;">Selecione o canal de pagamento:</label>
+                
+                <!-- Lista de Bancos (Kwanza) vinda do Django -->
+                <div id="selector-list-kwanza">
+                    {% for bank in banks %}
+                        {% if not bank.is_crypto %}
+                        <button type="button" class="bank-option-btn" data-bank-id="{{ bank.id }}">
+                            {% if bank.logo %}<img src="{{ bank.logo.url }}" width="24" height="24" style="border-radius:4px;">{% endif %}
+                            <span>{{ bank.name }}</span>
+                        </button>
+                        {% endif %}
+                    {% empty %}
+                        <!-- Fallback se não houver bancos cadastrados dinamicamente -->
+                        <button type="button" class="bank-option-btn" data-bank-id="BAI">Banco BAI</button>
+                        <button type="button" class="bank-option-btn" data-bank-id="BFA">Banco BFA</button>
+                    {% endfor %}
+                </div>
+
+                <!-- Lista de Carteiras/Canais USDT vindos do Django -->
+                <div id="selector-list-usdt" style="display: none;">
+                    <div class="crypto-notice-banner">
+                        ⚠️ ATENÇÃO: Certifique-se de escolher a rede exata (ex: TRC20) correspondente ao canal selecionado para evitar perda definitiva de valores.
+                    </div>
+                    {% for bank in banks %}
+                        {% if bank.is_crypto %}
+                        <button type="button" class="crypto-option-btn" data-bank-id="{{ bank.id }}">
+                            <span class="crypto-badge-icon">🪙</span>
+                            <span>{{ bank.name }}</span>
+                        </button>
+                        {% endif %}
+                    {% empty %}
+                        <!-- Fallback USDT padrão caso o admin do Django não tenha itens cadastrados -->
+                        <button type="button" class="crypto-option-btn" data-bank-id="USDT_TRC20">
+                            <span class="crypto-badge-icon">🪙</span>
+                            <span>USDT - Rede TRON (TRC20)</span>
+                        </button>
+                        <button type="button" class="crypto-option-btn" data-bank-id="USDT_BEP20">
+                            <span class="crypto-badge-icon">🪙</span>
+                            <span>USDT - Rede Binance (BEP20)</span>
+                        </button>
+                    {% endfor %}
+                </div>
+
+                <button type="button" class="btn-main btn-submit space-top-lg" id="to-step-3" disabled>Ver Dados de Pagamento</button>
+            </div>
+
+            <!-- ETAPA 3: DADOS DE PAGAMENTO, QR CODE E UPLOAD -->
+            <div class="step-content" id="step-3" style="display: none;">
+                
+                <!-- Cards de detalhes gerados para cada banco/canal -->
+                {% for bank in banks %}
+                <div class="bank-info-card" id="details-{{ bank.id }}" style="display: none;">
+                    
+                    <!-- Campos para Kwanza -->
+                    <div class="kwanza-details-fields">
+                        <div class="info-group">
+                            <label>Titular da Conta</label>
+                            <div class="copy-input">
+                                <input type="text" id="holder-{{ bank.id }}" value="{{ bank.account_holder }}" readonly>
+                                <button type="button" class="copy-icon" onclick="copyText('holder-{{ bank.id }}')">📋</button>
+                            </div>
+                        </div>
+                        <div class="info-group">
+                            <label>Número de Conta / IBAN</label>
+                            <div class="copy-input">
+                                <input type="text" id="iban-{{ bank.id }}" value="{{ bank.iban }}" readonly>
+                                <button type="button" class="copy-icon" onclick="copyText('iban-{{ bank.id }}')">📋</button>
+                            </div>
+                        </div>
+                        <div class="info-group">
+                            <label>Valor a Depositar</label>
+                            <div class="copy-input">
+                                <input type="text" class="display-final-amount" value="0.00" readonly>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Campos para USDT -->
+                    <div class="usdt-details-fields" style="display: none;">
+                        <div class="crypto-notice-banner">
+                            Envie o montante exato para o endereço abaixo utilizando a rede correspondente.
+                        </div>
+                        <div class="info-group">
+                            <label>Endereço da Wallet ({{ bank.name }})</label>
+                            <div class="copy-input">
+                                <input type="text" id="wallet-{{ bank.id }}" value="{{ bank.wallet_address|default:'TV12345abcdefwalletaddressplaceholder' }}" readonly>
+                                <button type="button" class="copy-icon" onclick="copyText('wallet-{{ bank.id }}')">📋</button>
+                            </div>
+                        </div>
+                        <div class="info-group">
+                            <label>Montante a Enviar</label>
+                            <div class="copy-input">
+                                <input type="text" class="display-final-usdt" value="0.00 USDT" readonly>
+                            </div>
+                        </div>
+
+                        <!-- QR Code Automático gerado via JS -->
+                        <div class="qrcode-container-box">
+                            <div class="qrcode-title">QR Code para Pagamento Direto</div>
+                            <div class="qrcode-render" data-addr="{{ bank.wallet_address|default:'TV12345abcdefwalletaddressplaceholder' }}"></div>
+                            <span class="qrcode-hint">Escaneie com sua carteira crypto compatível</span>
+                        </div>
+                    </div>
+
+                </div>
+                {% empty %}
+                <!-- Fallback se os dados vierem direto do front -->
+                <div class="bank-info-card" id="details-BAI" style="display: none;">
+                    <div class="info-group">
+                        <label>Titular</label>
+                        <div class="copy-input"><input type="text" id="h-bai" value="Nome da Empresa Lda" readonly><button type="button" class="copy-icon" onclick="copyText('h-bai')">📋</button></div>
+                    </div>
+                    <div class="info-group">
+                        <label>IBAN</label>
+                        <div class="copy-input"><input type="text" id="i-bai" value="AO06.0040.0000.1234.5678.1" readonly><button type="button" class="copy-icon" onclick="copyText('i-bai')">📋</button></div>
+                    </div>
+                </div>
+                <div class="bank-info-card" id="details-USDT_TRC20" style="display: none;">
+                    <div class="info-group">
+                        <label>Endereço TRC20</label>
+                        <div class="copy-input"><input type="text" id="w-trc" value="TXYZ123456789abcdefghijkUSDTwallet" readonly><button type="button" class="copy-icon" onclick="copyText('w-trc')">📋</button></div>
+                    </div>
+                    <div class="qrcode-container-box">
+                        <div class="qrcode-title">QR Code USDT</div>
+                        <div class="qrcode-render" data-addr="TXYZ123456789abcdefghijkUSDTwallet"></div>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <!-- Regras de Segurança / Avisos -->
+                <div class="info-rules space-bottom" id="rules-kwanza">
+                    <h4>Regras de Confirmação:</h4>
+                    <ul>
+                        <li><span>1</span>O valor transferido deve ser exatamente igual ao selecionado.</li>
+                        <li><span>2</span>Guarde o comprovativo da transferência bancária.</li>
+                    </ul>
+                </div>
+
+                <!-- Seção de Upload do Comprovativo -->
+                <div class="space-top-lg">
+                    <div class="upload-label">Carregar Comprovativo de Pagamento</div>
+                    <label for="file-upload" class="upload-box" style="display: block;">
+                        <div class="upload-icon">📁</div>
+                        <p id="upload-text">Clique aqui para selecionar o ficheiro</p>
+                        <div id="file-name"></div>
+                    </label>
+                    <input type="file" id="file-upload" name="receipt" accept="image/*,application/pdf" style="display: none;" required>
+                </div>
+
+                <button type="submit" class="btn-main btn-submit space-top-lg">Submeter Comprovativo</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Biblioteca QR Code JS necessária para gerar o QR code automático -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        let currentMethod = 'kwanza'; // 'kwanza' ou 'usdt'
+        let currentMethod = 'kwanza';
 
         const methodBtns = document.querySelectorAll('.method-btn');
         const sectionKwanza = document.getElementById('section-kwanza');
@@ -287,10 +636,8 @@
         const bankInput = document.getElementById('id_selected_bank');
         const paymentMethodTypeInput = document.getElementById('id_payment_method_type');
 
-        // Inicializar método padrão
         paymentMethodTypeInput.value = 'kwanza';
 
-        // Alternar entre Kwanza e USDT na Etapa 1
         methodBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 methodBtns.forEach(b => b.classList.remove('active'));
@@ -298,7 +645,6 @@
                 currentMethod = btn.dataset.method;
                 paymentMethodTypeInput.value = currentMethod;
 
-                // Resetar seleções e botões de avançar
                 amountInput.value = '';
                 bankInput.value = '';
                 next1.disabled = true;
@@ -324,7 +670,6 @@
                     selectorListUsdt.style.display = 'block';
                     manualAmountKz.value = '';
                     if(manualAmountUsdt.value && parseFloat(manualAmountUsdt.value) > 0) {
-                        // Converte USDT para Kwanza para salvar no backend Django (1 USDT = 1000 Kz)
                         const valKz = parseFloat(manualAmountUsdt.value) * 1000;
                         amountInput.value = valKz;
                         next1.disabled = false;
@@ -333,7 +678,6 @@
             });
         });
 
-        // Input manual Kwanza
         manualAmountKz.addEventListener('input', (e) => {
             const val = e.target.value;
             amountBtnsKz.forEach(b => b.classList.remove('active'));
@@ -346,7 +690,6 @@
             }
         });
 
-        // Botões rápidos Kwanza
         amountBtnsKz.forEach(btn => {
             btn.addEventListener('click', () => {
                 amountBtnsKz.forEach(b => b.classList.remove('active'));
@@ -359,7 +702,6 @@
             });
         });
 
-        // Input manual USDT (Taxa 1000 Kz = 1 USDT)
         manualAmountUsdt.addEventListener('input', (e) => {
             const valUsdt = e.target.value;
             amountBtnsUsdt.forEach(b => b.classList.remove('active'));
@@ -375,7 +717,6 @@
             }
         });
 
-        // Botões rápidos USDT
         amountBtnsUsdt.forEach(btn => {
             btn.addEventListener('click', () => {
                 amountBtnsUsdt.forEach(b => b.classList.remove('active'));
@@ -390,13 +731,11 @@
             });
         });
 
-        // Step 1 -> 2
         next1.addEventListener('click', () => {
             goToStep(2);
             updateStepper(2);
         });
 
-        // Seleção de Banco (Kwanza)
         bankBtnsKz.forEach(btn => {
             btn.addEventListener('click', () => {
                 bankBtnsKz.forEach(b => b.classList.remove('active'));
@@ -406,7 +745,6 @@
             });
         });
 
-        // Seleção de Canal USDT
         bankBtnsUsdt.forEach(btn => {
             btn.addEventListener('click', () => {
                 bankBtnsUsdt.forEach(b => b.classList.remove('active'));
@@ -416,52 +754,43 @@
             });
         });
 
-        // Step 2 -> 3
         next2.addEventListener('click', () => {
             const bankId = bankInput.value;
             document.querySelectorAll('.bank-info-card').forEach(card => card.style.display = 'none');
             const targetCard = document.getElementById(`details-${bankId}`);
-            targetCard.style.display = 'block';
+            if(targetCard) targetCard.style.display = 'block';
 
-            // Alternar exibição interna no card de detalhes conforme o método
-            const kwanzaFields = targetCard.querySelector('.kwanza-details-fields');
-            const usdtFields = targetCard.querySelector('.usdt-details-fields');
+            const kwanzaFields = targetCard ? targetCard.querySelector('.kwanza-details-fields') : null;
+            const usdtFields = targetCard ? targetCard.querySelector('.usdt-details-fields') : null;
 
             if (currentMethod === 'usdt') {
-                kwanzaFields.style.display = 'none';
-                usdtFields.style.display = 'block';
+                if(kwanzaFields) kwanzaFields.style.display = 'none';
+                if(usdtFields) usdtFields.style.display = 'block';
 
-                // Gerar QR Code automático para a wallet USDT correspondente
-                const qrContainer = targetCard.querySelector('.qrcode-render');
-                const walletAddress = qrContainer.getAttribute('data-addr');
-                // Limpar container anterior caso já exista
-                qrContainer.innerHTML = '';
-                if(walletAddress) {
-                    new QRCode(qrContainer, {
-                        text: walletAddress,
-                        width: 140,
-                        height: 140,
-                        colorDark: "#000000",
-                        colorLight: "#ffffff",
-                        correctLevel: QRCode.CorrectLevel.H
-                    });
+                const qrContainer = targetCard ? targetCard.querySelector('.qrcode-render') : null;
+                if(qrContainer) {
+                    const walletAddress = qrContainer.getAttribute('data-addr');
+                    qrContainer.innerHTML = '';
+                    if(walletAddress && typeof QRCode !== 'undefined') {
+                        new QRCode(qrContainer, {
+                            text: walletAddress,
+                            width: 140,
+                            height: 140,
+                            colorDark: "#000000",
+                            colorLight: "#ffffff",
+                            correctLevel: QRCode.CorrectLevel.H
+                        });
+                    }
                 }
             } else {
-                kwanzaFields.style.display = 'block';
-                usdtFields.style.display = 'none';
+                if(kwanzaFields) kwanzaFields.style.display = 'block';
+                if(usdtFields) usdtFields.style.display = 'none';
             }
 
             goToStep(3);
-            updateStepper(2);
-        });
-
-        // Step 3 -> 4
-        document.getElementById('to-step-4').addEventListener('click', () => {
-            goToStep(4);
             updateStepper(3);
         });
 
-        // Upload Preview
         document.getElementById('file-upload').addEventListener('change', function() {
             if(this.files[0]) {
                 document.getElementById('file-name').innerText = "Ficheiro: " + this.files[0].name;
@@ -471,7 +800,8 @@
 
         function goToStep(step) {
             document.querySelectorAll('.step-content').forEach(el => el.style.display = 'none');
-            document.getElementById(`step-${step}`).style.display = 'block';
+            const target = document.getElementById(`step-${step}`);
+            if(target) target.style.display = 'block';
         }
 
         function updateStepper(activeStep) {
@@ -487,6 +817,7 @@
                 } else if (stepNum === activeStep) {
                     dot.className = "circle active";
                     dot.innerHTML = stepNum;
+                    if(lines[idx-1]) lines[idx-1].classList.add('active');
                 } else {
                     dot.className = "circle";
                     dot.innerHTML = stepNum;
@@ -497,10 +828,12 @@
 
     function copyText(id) {
         const copyInput = document.getElementById(id);
+        if(!copyInput) return;
         copyInput.select();
         copyInput.setSelectionRange(0, 99999);
         navigator.clipboard.writeText(copyInput.value).then(() => {
             const btn = copyInput.nextElementSibling;
+            if(!btn) return;
             const originalIcon = btn.innerText;
             btn.innerText = "✓";
             setTimeout(() => { btn.innerText = originalIcon; }, 1500);
