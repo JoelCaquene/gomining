@@ -95,7 +95,7 @@
                             <input type="number" id="manual-amount-usdt" inputmode="decimal" placeholder="Digite o valor em USDT">
                         </div>
 
-                        <p class="label-small">Valores Rápidos Convertidos (Câmbio Wise: 1 USDT = {{ usdt_rate }} Kz)</p>
+                        <p class="label-small">Valores Rápidos Convertidos (Câmbio Fixo: 1 USDT = 1000.00 Kz)</p>
                         <div class="grid-amounts" id="grid-usdt">
                             {% for deposit_value in level_deposits_list %}
                                 <button type="button" class="amount-btn usdt-quick-btn" data-kwanza-value="{{ deposit_value }}">--</button>
@@ -635,8 +635,8 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // Câmbio Wise correto: Ex: 1 USDT = ~930 Kwanza (usdtRate representa quantos Kwanzas compram 1 USDT)
-        const usdtRate = {{ usdt_rate|stringformat:"f" }};
+        // Taxa de câmbio fixa solicitada: 1 USDT = 1000 Kz
+        const usdtRate = 1000.0; 
         let currentMethod = 'fiat'; // 'fiat' ou 'usdt'
 
         const tabBtns = document.querySelectorAll('.tab-btn');
@@ -649,7 +649,7 @@
         const gridFiatBtns = document.querySelectorAll('#grid-fiat .amount-btn');
         const gridUsdtBtns = document.querySelectorAll('#grid-usdt .amount-btn');
         
-        const amountInput = document.getElementById('id_amount'); // Salva sempre o valor final em Kwanza para o backend do Django
+        const amountInput = document.getElementById('id_amount'); // Salva sempre o valor final em Kwanza para o backend
         const usdtAmountInput = document.getElementById('id_usdt_amount');
         const paymentMethodInput = document.getElementById('id_payment_method');
         
@@ -657,10 +657,9 @@
         const next1 = document.getElementById('to-step-2');
         const next2 = document.getElementById('to-step-3');
 
-        // Inicializar botões rápidos de USDT com base no valor em Kwanza dividido pelo câmbio da Wise
+        // Inicializar botões rápidos de USDT (Ex: 3000 Kz / 1000 = 3.00 USDT)
         gridUsdtBtns.forEach(btn => {
             const kwanzaVal = parseFloat(btn.dataset.kwanzaValue);
-            // Correção matemática: Valor em Kwanza DIVIDIDO pela cotação do USDT
             const usdtVal = (kwanzaVal / usdtRate).toFixed(2);
             btn.innerText = usdtVal + ' $';
             btn.dataset.usdtValue = usdtVal;
@@ -694,7 +693,7 @@
             });
         });
 
-        // Input Manual Kwanza (Digita Kz, calcula USDT dividindo)
+        // Input Manual Kwanza (Divide por 1000 para achar USDT)
         manualAmountFiat.addEventListener('input', (e) => {
             const val = e.target.value;
             gridFiatBtns.forEach(b => b.classList.remove('active'));
@@ -709,13 +708,13 @@
             }
         });
 
-        // Input Manual USDT (Digita USDT, calcula Kwanza multiplicando pelo câmbio correto)
+        // Input Manual USDT (Multiplica por 1000 para achar Kwanza)
         manualAmountUsdt.addEventListener('input', (e) => {
             const val = e.target.value;
             gridUsdtBtns.forEach(b => b.classList.remove('active'));
             if (val && parseFloat(val) > 0) {
                 const usdtNum = parseFloat(val);
-                const calculatedKwanza = usdtNum * usdtRate; // Correção: Multiplica USDT pela taxa para achar o equivalente em Kwanza
+                const calculatedKwanza = usdtNum * usdtRate;
                 amountInput.value = calculatedKwanza.toFixed(2);
                 usdtAmountInput.value = usdtNum.toFixed(2);
                 document.querySelectorAll('.display-final-amount').forEach(el => el.value = usdtNum.toFixed(2) + ' USDT');
