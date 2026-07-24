@@ -81,7 +81,6 @@
 
                 <!-- Aba USDT -->
                 <div id="panel-usdt" class="currency-panel" style="display: none;">
-                    <!-- Aviso de segurança exigido -->
                     <div class="info-rules usdt-warning-box">
                         <h4>Atenção</h4>
                         <ul>
@@ -344,7 +343,6 @@
         margin-bottom: 16px;
     }
 
-    /* Abas de Método de Pagamento (Kwanza vs USDT) */
     .payment-method-tabs {
         display: flex;
         gap: 8px;
@@ -637,6 +635,7 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
+        // Câmbio Wise correto: Ex: 1 USDT = ~930 Kwanza (usdtRate representa quantos Kwanzas compram 1 USDT)
         const usdtRate = {{ usdt_rate|stringformat:"f" }};
         let currentMethod = 'fiat'; // 'fiat' ou 'usdt'
 
@@ -650,7 +649,7 @@
         const gridFiatBtns = document.querySelectorAll('#grid-fiat .amount-btn');
         const gridUsdtBtns = document.querySelectorAll('#grid-usdt .amount-btn');
         
-        const amountInput = document.getElementById('id_amount'); // Guarda em Kwanza para o Django
+        const amountInput = document.getElementById('id_amount'); // Salva sempre o valor final em Kwanza para o backend do Django
         const usdtAmountInput = document.getElementById('id_usdt_amount');
         const paymentMethodInput = document.getElementById('id_payment_method');
         
@@ -658,11 +657,12 @@
         const next1 = document.getElementById('to-step-2');
         const next2 = document.getElementById('to-step-3');
 
-        // Inicializar botões rápidos de USDT calculados pelo câmbio da Wise
+        // Inicializar botões rápidos de USDT com base no valor em Kwanza dividido pelo câmbio da Wise
         gridUsdtBtns.forEach(btn => {
             const kwanzaVal = parseFloat(btn.dataset.kwanzaValue);
+            // Correção matemática: Valor em Kwanza DIVIDIDO pela cotação do USDT
             const usdtVal = (kwanzaVal / usdtRate).toFixed(2);
-            btn.innerText = usdtVal;
+            btn.innerText = usdtVal + ' $';
             btn.dataset.usdtValue = usdtVal;
             btn.dataset.kwanzaVal = kwanzaVal;
         });
@@ -694,29 +694,31 @@
             });
         });
 
-        // Input Manual Kwanza
+        // Input Manual Kwanza (Digita Kz, calcula USDT dividindo)
         manualAmountFiat.addEventListener('input', (e) => {
             const val = e.target.value;
             gridFiatBtns.forEach(b => b.classList.remove('active'));
             if (val && parseFloat(val) > 0) {
-                amountInput.value = val;
-                usdtAmountInput.value = (parseFloat(val) / usdtRate).toFixed(2);
-                document.querySelectorAll('.display-final-amount').forEach(el => el.value = parseFloat(val).toFixed(2));
+                const kwanzaNum = parseFloat(val);
+                amountInput.value = kwanzaNum.toFixed(2);
+                usdtAmountInput.value = (kwanzaNum / usdtRate).toFixed(2);
+                document.querySelectorAll('.display-final-amount').forEach(el => el.value = kwanzaNum.toFixed(2) + ' Kz');
                 next1.disabled = false;
             } else {
                 next1.disabled = true;
             }
         });
 
-        // Input Manual USDT
+        // Input Manual USDT (Digita USDT, calcula Kwanza multiplicando pelo câmbio correto)
         manualAmountUsdt.addEventListener('input', (e) => {
             const val = e.target.value;
             gridUsdtBtns.forEach(b => b.classList.remove('active'));
             if (val && parseFloat(val) > 0) {
-                const calculatedKwanza = parseFloat(val) * usdtRate;
+                const usdtNum = parseFloat(val);
+                const calculatedKwanza = usdtNum * usdtRate; // Correção: Multiplica USDT pela taxa para achar o equivalente em Kwanza
                 amountInput.value = calculatedKwanza.toFixed(2);
-                usdtAmountInput.value = val;
-                document.querySelectorAll('.display-final-amount').forEach(el => el.value = parseFloat(val).toFixed(2) + ' USDT');
+                usdtAmountInput.value = usdtNum.toFixed(2);
+                document.querySelectorAll('.display-final-amount').forEach(el => el.value = usdtNum.toFixed(2) + ' USDT');
                 next1.disabled = false;
             } else {
                 next1.disabled = true;
@@ -729,10 +731,10 @@
                 gridFiatBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 manualAmountFiat.value = '';
-                const val = btn.dataset.value;
-                amountInput.value = val;
-                usdtAmountInput.value = (parseFloat(val) / usdtRate).toFixed(2);
-                document.querySelectorAll('.display-final-amount').forEach(el => el.value = parseFloat(val).toFixed(2));
+                const val = parseFloat(btn.dataset.value);
+                amountInput.value = val.toFixed(2);
+                usdtAmountInput.value = (val / usdtRate).toFixed(2);
+                document.querySelectorAll('.display-final-amount').forEach(el => el.value = val.toFixed(2) + ' Kz');
                 next1.disabled = false;
             });
         });
@@ -743,22 +745,21 @@
                 gridUsdtBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 manualAmountUsdt.value = '';
-                const usdtVal = btn.dataset.usdtValue;
-                const kwanzaVal = btn.dataset.kwanzaVal;
-                amountInput.value = kwanzaVal;
-                usdtAmountInput.value = usdtVal;
-                document.querySelectorAll('.display-final-amount').forEach(el => el.value = usdtVal + ' USDT');
+                const usdtVal = parseFloat(btn.dataset.usdtValue);
+                const kwanzaVal = parseFloat(btn.dataset.kwanzaVal);
+                amountInput.value = kwanzaVal.toFixed(2);
+                usdtAmountInput.value = usdtVal.toFixed(2);
+                document.querySelectorAll('.display-final-amount').forEach(el => el.value = usdtVal.toFixed(2) + ' USDT');
                 next1.disabled = false;
             });
         });
 
-        // Step 1 -> 2 (Filtra os bancos/canais conforme o método selecionado)
+        // Step 1 -> 2
         next1.addEventListener('click', () => {
             const listFiat = document.getElementById('list-fiat');
             const listUsdt = document.getElementById('list-usdt');
             const bankStepLabel = document.getElementById('bank-step-label');
             
-            // Limpa seleção anterior de banco
             document.querySelectorAll('.bank-option-btn').forEach(b => b.classList.remove('active'));
             bankInput.value = '';
             next2.disabled = true;
