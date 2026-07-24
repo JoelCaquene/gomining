@@ -48,18 +48,77 @@ class LevelAdmin(admin.ModelAdmin):
         count = UserLevel.objects.filter(level=obj, is_active=True).count()
         return format_html('<strong>{}</strong>', count)
 
-# --- BANCOS ---
+# --- BANCOS DOS USUÁRIOS ---
 @admin.register(BankDetails)
 class BankDetailsAdmin(admin.ModelAdmin):
     list_display = ('user', 'bank_name', 'account_holder_name')
     search_fields = ('user__phone_number', 'bank_name', 'account_holder_name')
 
+
+# --- CONTAS DA PLATAFORMA ---
 @admin.register(PlatformBankDetails)
 class PlatformBankDetailsAdmin(admin.ModelAdmin):
-    list_display = ('bank_name', 'IBAN', 'account_holder_name', 'is_crypto')
-    list_filter = ('is_crypto',)
+    list_display = ('bank_name', 'IBAN', 'account_holder_name', 'is_crypto', 'is_active')
+    list_filter = ('is_crypto', 'is_active')
     search_fields = ('bank_name', 'IBAN', 'account_holder_name')
-    list_editable = ('is_crypto',)
+    list_editable = ('is_crypto', 'is_active')
+
+    def get_fieldsets(self, request, obj=None):
+        """Altera dinamicamente os campos exibidos no formulário de edição/criação
+
+        com base no tipo (Fiat/Kwanza ou USDT/Crypto).
+        """
+        # Se for um objeto existente e for cripto/USDT
+        if obj and obj.is_crypto:
+            fieldsets = (
+                ('Informações da Wallet USDT', {
+                    'fields': (
+                        'is_crypto',
+                        'bank_name',
+                        'IBAN',
+                        'account_holder_name',
+                        'is_active',
+                    ),
+                    'description': (
+                        'Preencha os dados referentes à rede e endereço da'
+                        ' carteira USDT.'
+                    ),
+                }),
+            )
+        # Se for um objeto existente e for Kwanza/Fiat
+        elif obj and not obj.is_crypto:
+            fieldsets = (
+                ('Informações da Conta Bancária (Kwanza)', {
+                    'fields': (
+                        'is_crypto',
+                        'bank_name',
+                        'IBAN',
+                        'account_holder_name',
+                        'is_active',
+                    ),
+                    'description': (
+                        'Preencha os dados referentes ao banco nacional e IBAN.'
+                    ),
+                }),
+            )
+        # Se estiver criando um novo registro (obj é None)
+        else:
+            fieldsets = (
+                ('Detalhes da Conta da Plataforma', {
+                    'fields': (
+                        'is_crypto',
+                        'bank_name',
+                        'IBAN',
+                        'account_holder_name',
+                        'is_active',
+                    ),
+                    'description': (
+                        'Selecione primeiro se é Canal USDT/Crypto para'
+                        ' direcionar os campos corretos.'
+                    ),
+                }),
+            )
+        return fieldsets
 
 # --- TRANSAÇÕES ---
 @admin.register(Deposit)
