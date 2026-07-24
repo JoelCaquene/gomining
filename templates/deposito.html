@@ -85,7 +85,7 @@
         background: var(--glow-blue);
     }
 
-    /* Tabs de Método (Kwanza vs USDT) */
+    /* Tabs de Método */
     .method-selector {
         display: flex;
         gap: 10px;
@@ -148,13 +148,6 @@
         border-radius: 14px; 
     }
 
-    .usdt-rules {
-        background: rgba(38, 166, 154, 0.04);
-        border: 1px solid rgba(38, 166, 154, 0.2);
-    }
-    .usdt-rules h4 { color: #4db6ac !important; }
-    .usdt-rules li span { background: rgba(38, 166, 154, 0.2) !important; color: #4db6ac !important; }
-    
     .info-rules h4 { margin: 0 0 12px 0; color: #ff5252; font-size: 14px; font-weight: 600; }
     .info-rules ul { list-style: none; padding: 0; margin: 0; }
     .info-rules li { margin-bottom: 10px; display: flex; align-items: flex-start; line-height: 1.4; }
@@ -365,19 +358,6 @@
     .space-top { margin-top: 16px; }
     .space-top-lg { margin-top: 20px; }
     .space-bottom { margin-bottom: 16px; }
-
-    .success-screen { text-align: center; padding: 32px 8px; }
-    .success-icon { 
-        width: 68px; height: 68px; 
-        background: rgba(0, 230, 118, 0.15); 
-        color: var(--success);
-        border: 1px solid rgba(0, 230, 118, 0.3);
-        border-radius: 50%; 
-        display: flex; align-items: center; justify-content: center;
-        font-size: 32px; margin: 0 auto 20px;
-    }
-    .success-screen h2 { font-size: 20px; font-weight: 700; margin-bottom: 12px; color: #fff; }
-    .success-screen p { color: var(--text-muted); font-size: 14px; line-height: 1.5; margin-bottom: 24px; }
 </style>
 
 <div class="deposit-container">
@@ -449,11 +429,11 @@
                 <button type="button" class="btn-main btn-submit" id="to-step-2" disabled>Avançar para Pagamento</button>
             </div>
 
-            <!-- ETAPA 2: ESCOLHA DO BANCO OU CANAL USDT -->
+            <!-- ETAPA 2: ESCOLHA DO BANCO OU CANAL USDT (Dinâmico do Django) -->
             <div class="step-content" id="step-2" style="display: none;">
                 <label class="info-group label" style="margin-bottom:12px;">Selecione o canal de pagamento:</label>
                 
-                <!-- Lista de Bancos (Kwanza) vinda do Django -->
+                <!-- Lista de Bancos (Kwanza) vindos do Django -->
                 <div id="selector-list-kwanza">
                     {% for bank in banks %}
                         {% if not bank.is_crypto %}
@@ -462,17 +442,13 @@
                             <span>{{ bank.name }}</span>
                         </button>
                         {% endif %}
-                    {% empty %}
-                        <!-- Fallback se não houver bancos cadastrados dinamicamente -->
-                        <button type="button" class="bank-option-btn" data-bank-id="BAI">Banco BAI</button>
-                        <button type="button" class="bank-option-btn" data-bank-id="BFA">Banco BFA</button>
                     {% endfor %}
                 </div>
 
-                <!-- Lista de Carteiras/Canais USDT vindos do Django -->
+                <!-- Lista de Carteiras USDT vindas do Django -->
                 <div id="selector-list-usdt" style="display: none;">
                     <div class="crypto-notice-banner">
-                        ⚠️ ATENÇÃO: Certifique-se de escolher a rede exata (ex: TRC20) correspondente ao canal selecionado para evitar perda definitiva de valores.
+                        ⚠️ ATENÇÃO: Escolha exatamente o canal correspondente no seu envio para evitar perda definitiva de valores.
                     </div>
                     {% for bank in banks %}
                         {% if bank.is_crypto %}
@@ -481,30 +457,20 @@
                             <span>{{ bank.name }}</span>
                         </button>
                         {% endif %}
-                    {% empty %}
-                        <!-- Fallback USDT padrão caso o admin do Django não tenha itens cadastrados -->
-                        <button type="button" class="crypto-option-btn" data-bank-id="USDT_TRC20">
-                            <span class="crypto-badge-icon">🪙</span>
-                            <span>USDT - Rede TRON (TRC20)</span>
-                        </button>
-                        <button type="button" class="crypto-option-btn" data-bank-id="USDT_BEP20">
-                            <span class="crypto-badge-icon">🪙</span>
-                            <span>USDT - Rede Binance (BEP20)</span>
-                        </button>
                     {% endfor %}
                 </div>
 
                 <button type="button" class="btn-main btn-submit space-top-lg" id="to-step-3" disabled>Ver Dados de Pagamento</button>
             </div>
 
-            <!-- ETAPA 3: DADOS DE PAGAMENTO, QR CODE E UPLOAD -->
+            <!-- ETAPA 3: DADOS DE PAGAMENTO, QR CODE E UPLOAD (Dinâmico do Django) -->
             <div class="step-content" id="step-3" style="display: none;">
                 
-                <!-- Cards de detalhes gerados para cada banco/canal -->
                 {% for bank in banks %}
                 <div class="bank-info-card" id="details-{{ bank.id }}" style="display: none;">
                     
-                    <!-- Campos para Kwanza -->
+                    {% if not bank.is_crypto %}
+                    <!-- Campos para Kwanza (Dados vindos do Django) -->
                     <div class="kwanza-details-fields">
                         <div class="info-group">
                             <label>Titular da Conta</label>
@@ -527,16 +493,16 @@
                             </div>
                         </div>
                     </div>
-
-                    <!-- Campos para USDT -->
-                    <div class="usdt-details-fields" style="display: none;">
+                    {% else %}
+                    <!-- Campos para USDT (Dados vindos do Django) -->
+                    <div class="usdt-details-fields">
                         <div class="crypto-notice-banner">
-                            Envie o montante exato para o endereço abaixo utilizando a rede correspondente.
+                            Envie o montante exato para o endereço abaixo.
                         </div>
                         <div class="info-group">
                             <label>Endereço da Wallet ({{ bank.name }})</label>
                             <div class="copy-input">
-                                <input type="text" id="wallet-{{ bank.id }}" value="{{ bank.wallet_address|default:'TV12345abcdefwalletaddressplaceholder' }}" readonly>
+                                <input type="text" id="wallet-{{ bank.id }}" value="{{ bank.wallet_address }}" readonly>
                                 <button type="button" class="copy-icon" onclick="copyText('wallet-{{ bank.id }}')">📋</button>
                             </div>
                         </div>
@@ -547,45 +513,24 @@
                             </div>
                         </div>
 
-                        <!-- QR Code Automático gerado via JS -->
+                        <!-- QR Code Automático gerado via JS baseado no wallet_address do Django -->
                         <div class="qrcode-container-box">
                             <div class="qrcode-title">QR Code para Pagamento Direto</div>
-                            <div class="qrcode-render" data-addr="{{ bank.wallet_address|default:'TV12345abcdefwalletaddressplaceholder' }}"></div>
+                            <div class="qrcode-render" data-addr="{{ bank.wallet_address }}"></div>
                             <span class="qrcode-hint">Escaneie com sua carteira crypto compatível</span>
                         </div>
                     </div>
+                    {% endif %}
 
-                </div>
-                {% empty %}
-                <!-- Fallback se os dados vierem direto do front -->
-                <div class="bank-info-card" id="details-BAI" style="display: none;">
-                    <div class="info-group">
-                        <label>Titular</label>
-                        <div class="copy-input"><input type="text" id="h-bai" value="Nome da Empresa Lda" readonly><button type="button" class="copy-icon" onclick="copyText('h-bai')">📋</button></div>
-                    </div>
-                    <div class="info-group">
-                        <label>IBAN</label>
-                        <div class="copy-input"><input type="text" id="i-bai" value="AO06.0040.0000.1234.5678.1" readonly><button type="button" class="copy-icon" onclick="copyText('i-bai')">📋</button></div>
-                    </div>
-                </div>
-                <div class="bank-info-card" id="details-USDT_TRC20" style="display: none;">
-                    <div class="info-group">
-                        <label>Endereço TRC20</label>
-                        <div class="copy-input"><input type="text" id="w-trc" value="TXYZ123456789abcdefghijkUSDTwallet" readonly><button type="button" class="copy-icon" onclick="copyText('w-trc')">📋</button></div>
-                    </div>
-                    <div class="qrcode-container-box">
-                        <div class="qrcode-title">QR Code USDT</div>
-                        <div class="qrcode-render" data-addr="TXYZ123456789abcdefghijkUSDTwallet"></div>
-                    </div>
                 </div>
                 {% endfor %}
 
-                <!-- Regras de Segurança / Avisos -->
+                <!-- Regras de Confirmação -->
                 <div class="info-rules space-bottom" id="rules-kwanza">
                     <h4>Regras de Confirmação:</h4>
                     <ul>
                         <li><span>1</span>O valor transferido deve ser exatamente igual ao selecionado.</li>
-                        <li><span>2</span>Guarde o comprovativo da transferência bancária.</li>
+                        <li><span>2</span>Guarde o comprovativo da transferência.</li>
                     </ul>
                 </div>
 
@@ -606,7 +551,7 @@
     </div>
 </div>
 
-<!-- Biblioteca QR Code JS necessária para gerar o QR code automático -->
+<!-- Biblioteca QR Code JS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
 <script>
@@ -758,16 +703,11 @@
             const bankId = bankInput.value;
             document.querySelectorAll('.bank-info-card').forEach(card => card.style.display = 'none');
             const targetCard = document.getElementById(`details-${bankId}`);
-            if(targetCard) targetCard.style.display = 'block';
-
-            const kwanzaFields = targetCard ? targetCard.querySelector('.kwanza-details-fields') : null;
-            const usdtFields = targetCard ? targetCard.querySelector('.usdt-details-fields') : null;
-
-            if (currentMethod === 'usdt') {
-                if(kwanzaFields) kwanzaFields.style.display = 'none';
-                if(usdtFields) usdtFields.style.display = 'block';
-
-                const qrContainer = targetCard ? targetCard.querySelector('.qrcode-render') : null;
+            if(targetCard) {
+                targetCard.style.display = 'block';
+                
+                // Se for USDT, gera o QR code dinamicamente com o endereço vindo do Django
+                const qrContainer = targetCard.querySelector('.qrcode-render');
                 if(qrContainer) {
                     const walletAddress = qrContainer.getAttribute('data-addr');
                     qrContainer.innerHTML = '';
@@ -782,9 +722,6 @@
                         });
                     }
                 }
-            } else {
-                if(kwanzaFields) kwanzaFields.style.display = 'block';
-                if(usdtFields) usdtFields.style.display = 'none';
             }
 
             goToStep(3);
