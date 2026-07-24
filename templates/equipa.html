@@ -1,0 +1,441 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Minha Equipa | Sistema de Afiliados{% endblock %}
+
+{% block content %}
+<div class="team-page-body">
+    <div class="team-container-wrapper">
+        
+        <div class="top-nav">
+            <a href="{% url 'menu' %}" class="back-btn">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+        </div>
+
+        <div class="page-header-custom">
+            <h1>Minha Equipa <i class="fas fa-network-wired"></i></h1>
+        </div>
+
+        <div class="invite-link-section">
+            <div class="invite-box">
+                <span id="invite-link">{{ invite_link }}</span>
+                <button type="button" class="copy-button" id="copyBtn">
+                    <i class="fas fa-copy"></i>
+                </button>
+            </div>
+            <p class="invite-code-text">
+                Meu Código: <span>{{ user.invite_code }}</span>
+            </p>
+        </div>
+
+        <!-- LISTA DE CARDS HORIZONTAIS COMPACTOS -->
+        <div class="summary-area-list">
+            
+            <!-- NÍVEL A -->
+            <div class="stat-card horizontal-card glow-blue">
+                <div class="card-left">
+                    <div class="icon-wrapper"><i class="fas fa-user-tie"></i></div>
+                    <div class="card-title-group">
+                        <span class="level-badge badge-blue">Nível A</span>
+                        <h4 class="card-title">Diretos</h4>
+                    </div>
+                </div>
+
+                <div class="card-middle stats-info">
+                    <div class="stat-item"><span>Membros</span><strong>{{ level_a_count }}</strong></div>
+                    <div class="stat-item"><span>Investidores</span><strong>{{ level_a_investors }}</strong></div>
+                </div>
+
+                <div class="card-right rule-box">
+                    <small><i class="fas fa-gift"></i> 15% Invest. + 100 KZ Tarefa</small>
+                </div>
+            </div>
+
+            <!-- NÍVEL B -->
+            <div class="stat-card horizontal-card glow-purple">
+                <div class="card-left">
+                    <div class="icon-wrapper"><i class="fas fa-users"></i></div>
+                    <div class="card-title-group">
+                        <span class="level-badge badge-purple">Nível B</span>
+                        <h4 class="card-title">Nível 2</h4>
+                    </div>
+                </div>
+
+                <div class="card-middle stats-info">
+                    <div class="stat-item"><span>Membros</span><strong>{{ level_b_count }}</strong></div>
+                    <div class="stat-item"><span>Investidores</span><strong>{{ level_b_investors }}</strong></div>
+                </div>
+
+                <div class="card-right rule-box">
+                    <small><i class="fas fa-gift"></i> 3% Invest. + 30 KZ Tarefa</small>
+                </div>
+            </div>
+
+            <!-- NÍVEL C -->
+            <div class="stat-card horizontal-card glow-emerald">
+                <div class="card-left">
+                    <div class="icon-wrapper"><i class="fas fa-users-cog"></i></div>
+                    <div class="card-title-group">
+                        <span class="level-badge badge-emerald">Nível C</span>
+                        <h4 class="card-title">Nível 3</h4>
+                    </div>
+                </div>
+
+                <div class="card-middle stats-info">
+                    <div class="stat-item"><span>Membros</span><strong>{{ level_c_count }}</strong></div>
+                    <div class="stat-item"><span>Investidores</span><strong>{{ level_c_investors }}</strong></div>
+                </div>
+
+                <div class="card-right rule-box">
+                    <small><i class="fas fa-gift"></i> 1% Invest. + 10 KZ Tarefa</small>
+                </div>
+            </div>
+
+            <!-- TOTAL / BÓNUS -->
+            <div class="stat-card horizontal-card glow-gold">
+                <div class="card-left">
+                    <div class="icon-wrapper icon-gold"><i class="fas fa-wallet"></i></div>
+                    <div class="card-title-group">
+                        <span class="level-badge badge-gold">Total</span>
+                        <h4 class="card-title">Bónus Rede</h4>
+                    </div>
+                </div>
+
+                <div class="card-middle stats-info">
+                    <div class="stat-item"><span>Total Equipa</span><strong>{{ team_count }}</strong></div>
+                    <div class="stat-item"><span>Subsídio</span><strong class="currency">KZ {{ subsidy_balance|default:"0" }}</strong></div>
+                </div>
+
+                <div class="card-right rule-box rule-gold">
+                    <small><i class="fas fa-chart-line"></i> Ganhos acumulados da rede</small>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="info-section">
+            <h3 class="info-title"><i class="fas fa-shield-alt"></i> Regras de Comissionamento</h3>
+            <p class="info-text"><strong>Nível A (Diretos):</strong> Seus convidados diretos. Receba 15% do investimento deles e 100 KZ por cada tarefa que eles fizerem.</p>
+            <p class="info-text"><strong>Nível B (Subordinados):</strong> Convidados do seu Nível A. Receba 3% do investimento e 30 KZ por tarefa.</p>
+            <p class="info-text"><strong>Nível C (Rede):</strong> Convidados do seu Nível B. Receba 1% do investimento e 10 KZ por tarefa.</p>
+        </div>
+    </div>
+</div>
+
+<style>
+    :root {
+        /* FUNDO CINZA ACESO / GRAFITE COM BRILHO ESVERDEADO */
+        --bg-main: #121619;
+        --card-bg: rgba(26, 32, 38, 0.85);
+        --border-light: rgba(255, 255, 255, 0.08);
+        --text-white: #f1f5f9;
+        --text-muted: #94a3b8;
+        
+        /* CORES DE CADA CARD */
+        --color-blue: #00f2fe;
+        --color-purple: #b53cff;
+        --color-emerald: #00f5a0;
+        --color-gold: #ffb703;
+    }
+
+    .team-page-body {
+        /* FUNDO CINZA GRAFITE COM BRILHO VERDE E CIANO NO TOPO */
+        background: 
+            radial-gradient(circle at 50% 0%, rgba(0, 245, 160, 0.12) 0%, transparent 50%),
+            radial-gradient(circle at 80% 20%, rgba(0, 168, 132, 0.08) 0%, transparent 40%),
+            var(--bg-main);
+        min-height: 100vh;
+        color: var(--text-white);
+        font-family: 'Poppins', 'Inter', sans-serif;
+        padding-bottom: 40px;
+    }
+
+    .team-container-wrapper {
+        max-width: 650px;
+        margin: 0 auto;
+        padding: 15px;
+    }
+
+    .top-nav { margin-bottom: 15px; }
+    .back-btn {
+        color: var(--text-white);
+        text-decoration: none;
+        font-size: 0.85rem;
+        background: rgba(255,255,255,0.06);
+        padding: 8px 16px;
+        border-radius: 50px;
+        transition: 0.3s;
+        border: 1px solid var(--border-light);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .back-btn:hover { background: rgba(0, 245, 160, 0.2); border-color: var(--color-emerald); }
+
+    .page-header-custom h1 {
+        font-size: 1.3rem;
+        text-align: center;
+        margin-bottom: 20px;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: #fff;
+        font-weight: 700;
+        text-shadow: 0 0 15px rgba(0,245,160,0.2);
+    }
+
+    .invite-box {
+        background: var(--card-bg);
+        border: 1px solid rgba(0, 245, 160, 0.3);
+        padding: 10px 15px;
+        border-radius: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(10px);
+    }
+
+    #invite-link { 
+        font-size: 0.8rem; 
+        color: var(--color-emerald); 
+        white-space: nowrap; 
+        overflow: hidden; 
+        text-overflow: ellipsis;
+        font-family: monospace;
+        margin-right: 10px;
+    }
+
+    .copy-button { 
+        background: var(--color-emerald); 
+        border: none; 
+        color: #0b141a; 
+        width: 38px;
+        height: 34px;
+        border-radius: 8px; 
+        cursor: pointer; 
+        transition: 0.2s;
+        font-weight: bold;
+    }
+
+    .invite-code-text {
+        color: var(--text-muted); 
+        font-size: 0.8rem; 
+        text-align: center; 
+        margin-bottom: 25px; 
+        font-weight: 500;
+    }
+    .invite-code-text span {
+        color: var(--color-emerald);
+        font-weight: 700;
+        letter-spacing: 1px;
+    }
+
+    /* LISTA DE CARDS HORIZONTAIS PARECIDOS COM PAINEL PROFISSIONAL */
+    .summary-area-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-bottom: 25px;
+    }
+
+    .stat-card.horizontal-card {
+        background: var(--card-bg);
+        border-radius: 14px;
+        padding: 12px 16px;
+        position: relative;
+        border: 1px solid var(--border-light);
+        display: grid;
+        grid-template-columns: 1.2fr 1.3fr 1.5fr;
+        align-items: center;
+        gap: 10px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(8px);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .stat-card.horizontal-card:hover {
+        transform: translateY(-2px);
+    }
+
+    /* BORDAS COM GLOW INDIVIDUAIS */
+    .glow-blue { border-left: 4px solid var(--color-blue); }
+    .glow-purple { border-left: 4px solid var(--color-purple); }
+    .glow-emerald { border-left: 4px solid var(--color-emerald); }
+    .glow-gold { border-left: 4px solid var(--color-gold); }
+
+    /* LADO ESQUERDO DO CARD */
+    .card-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .icon-wrapper { 
+        font-size: 1.2rem; 
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255,255,255,0.05);
+    }
+
+    .glow-blue .icon-wrapper { color: var(--color-blue); background: rgba(0, 242, 254, 0.1); }
+    .glow-purple .icon-wrapper { color: var(--color-purple); background: rgba(181, 60, 255, 0.1); }
+    .glow-emerald .icon-wrapper { color: var(--color-emerald); background: rgba(0, 245, 160, 0.1); }
+    .glow-gold .icon-wrapper { color: var(--color-gold); background: rgba(255, 183, 3, 0.1); }
+
+    .card-title-group {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .card-title { 
+        font-size: 0.85rem; 
+        margin: 0; 
+        font-weight: 600; 
+        color: var(--text-white);
+    }
+
+    .level-badge {
+        font-size: 0.6rem;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-weight: 700;
+        text-transform: uppercase;
+        margin-bottom: 2px;
+    }
+
+    .badge-blue { background: rgba(0, 242, 254, 0.15); color: var(--color-blue); }
+    .badge-purple { background: rgba(181, 60, 255, 0.15); color: var(--color-purple); }
+    .badge-emerald { background: rgba(0, 245, 160, 0.15); color: var(--color-emerald); }
+    .badge-gold { background: rgba(255, 183, 3, 0.15); color: var(--color-gold); }
+
+    /* PARTE CENTRAL DO CARD (MENSAGENS/DADOS) */
+    .card-middle.stats-info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        border-left: 1px solid var(--border-light);
+        padding-left: 10px;
+    }
+
+    .stat-item {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.72rem;
+    }
+
+    .stat-item span { color: var(--text-muted); }
+    .stat-item strong { color: var(--text-white); font-weight: 600; }
+    .currency { color: var(--color-emerald) !important; font-weight: 700; }
+
+    /* PARTE DIREITA DO CARD (REGRAS/RESUMO) */
+    .card-right.rule-box {
+        background: rgba(0, 0, 0, 0.25);
+        padding: 6px 8px;
+        border-radius: 8px;
+        text-align: center;
+        font-size: 0.68rem;
+        color: var(--text-muted);
+        border: 1px solid rgba(255,255,255,0.03);
+    }
+
+    .rule-gold {
+        border-color: rgba(255, 183, 3, 0.2) !important;
+        color: var(--color-gold) !important;
+    }
+
+    /* SESSÃO DE INFORMAÇÕES/REGRAS */
+    .info-section {
+        background: var(--card-bg);
+        padding: 16px;
+        border-radius: 14px;
+        border: 1px solid var(--border-light);
+        border-left: 4px solid var(--color-emerald);
+        backdrop-filter: blur(8px);
+    }
+
+    .info-title { 
+        font-size: 0.9rem; 
+        margin-bottom: 10px; 
+        color: var(--color-emerald); 
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .info-text { 
+        font-size: 0.78rem; 
+        color: var(--text-muted); 
+        margin-bottom: 8px; 
+        line-height: 1.5; 
+    }
+    .info-text:last-child { margin-bottom: 0; }
+    .info-text strong { color: var(--text-white); }
+
+    /* RESPONSIVIDADE PARA CELULARES PEQUENOS */
+    @media (max-width: 520px) {
+        .stat-card.horizontal-card {
+            grid-template-columns: 1fr;
+            gap: 8px;
+            padding: 12px;
+        }
+
+        .card-left {
+            justify-content: flex-start;
+        }
+
+        .card-middle.stats-info {
+            border-left: none;
+            padding-left: 0;
+            border-top: 1px solid var(--border-light);
+            padding-top: 6px;
+            flex-direction: row;
+            justify-content: space-between;
+        }
+
+        .stat-item {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .card-right.rule-box {
+            text-align: left;
+        }
+    }
+</style>
+
+<script>
+    document.getElementById('copyBtn').addEventListener('click', function() {
+        const textToCopy = document.getElementById('invite-link').innerText;
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                showSuccess(this);
+            });
+        } else {
+            const textArea = document.createElement("textarea");
+            textArea.value = textToCopy;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            showSuccess(this);
+        }
+    });
+
+    function showSuccess(btn) {
+        const originalContent = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check"></i>';
+        btn.style.backgroundColor = '#00a884';
+        setTimeout(() => {
+            btn.innerHTML = originalContent;
+            btn.style.backgroundColor = '';
+        }, 2000);
+    }
+</script>
+{% endblock %}

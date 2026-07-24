@@ -1,0 +1,664 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Depósito{% endblock %}
+
+{% block content %}
+<div class="deposit-container">
+    <div class="jackpay-header">
+        <div class="logo-box">
+            <span class="logo-icon">💠</span> JackPay
+        </div>
+    </div>
+
+    <!-- Stepper Fluido e Responsivo -->
+    <div class="stepper">
+        <div class="step-item">
+            <div class="circle active" id="dot-1">1</div>
+            <span>Escolher</span>
+        </div>
+        <div class="line" id="line-1"></div>
+        <div class="step-item">
+            <div class="circle" id="dot-2">2</div>
+            <span>Pagar</span>
+        </div>
+        <div class="line" id="line-2"></div>
+        <div class="step-item">
+            <div class="circle" id="dot-3">3</div>
+            <span>Validar</span>
+        </div>
+    </div>
+
+    {% if deposit_success %}
+        <div class="success-screen">
+            <div class="success-icon">✓</div>
+            <h2>Depósito Enviado!</h2>
+            <p>O seu depósito está a ser processado e será confirmado em 5 a 30 minutos.</p>
+            <a href="{% url 'menu' %}" class="btn-main">Voltar ao Menu</a>
+        </div>
+    {% else %}
+        <form id="deposit-form" method="post" enctype="multipart/form-data" novalidate>
+            {% csrf_token %}
+            <input type="hidden" name="{{ form.amount.name }}" id="id_amount" value="">
+            <input type="hidden" name="selected_bank" id="id_selected_bank" value="">
+
+            <!-- ETAPA 1: VALOR -->
+            <div id="step-1" class="step-content">
+                <div class="balance-card">
+                    <p>Saldo Atual</p>
+                    <h3>Kz 0.00</h3>
+                </div>
+
+                <div class="amount-section">
+                    <label class="section-label" for="manual-amount">Valor do Recarregamento</label>
+                    <div class="input-wrapper">
+                        <span>Kz</span>
+                        <input type="number" id="manual-amount" inputmode="decimal" placeholder="Digite o valor">
+                    </div>
+
+                    <p class="label-small">Valores Rápidos</p>
+                    <div class="grid-amounts">
+                        {% for deposit_value in level_deposits_list %}
+                            <button type="button" class="amount-btn" data-value="{{ deposit_value }}">{{ deposit_value }}</button>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="info-rules">
+                    <h4>Informações Importantes</h4>
+                    <ul>
+                        <li><span>1</span> Não Deposite valores em bancos diferentes.</li>
+                        <li><span>2</span> Não falsifique os comprovativos, sob risco de banimento.</li>
+                        <li><span>3</span> Horário de depósito: <strong>08:30 até 20:00</strong>.</li>
+                        <li><span>4</span> Dias de Depósito: <strong>Segunda a Domingo</strong>.</li>
+                    </ul>
+                </div>
+                
+                <button type="button" class="btn-main" id="to-step-2" disabled>Recarregar Agora</button>
+            </div>
+
+            <!-- ETAPA 2: BANCO -->
+            <div id="step-2" class="step-content" style="display: none;">
+                <label class="section-label center-label">Escolha o Banco Destino</label>
+                <div class="bank-list">
+                    {% for bank in platform_bank_details %}
+                        <button type="button" class="bank-option-btn" data-bank-id="{{ forloop.counter }}">
+                            {{ bank.bank_name }}
+                        </button>
+                    {% endfor %}
+                </div>
+                <button type="button" class="btn-main space-top" id="to-step-3" disabled>Próxima etapa</button>
+            </div>
+
+            <!-- ETAPA 3: TRANSFERÊNCIA -->
+            <div id="step-3" class="step-content" style="display: none;">
+                <label class="section-label">Dados para Transferência</label>
+                <div class="bank-details-wrapper">
+                    {% for bank in platform_bank_details %}
+                        <div id="details-{{ forloop.counter }}" class="bank-info-card" style="display: none;">
+                            <div class="info-group">
+                                <label>Método de Pagamento</label>
+                                <div class="copy-input">
+                                    <input type="text" value="{{ bank.bank_name }}" id="bank-name-{{ forloop.counter }}" readonly>
+                                    <button type="button" class="copy-icon" onclick="copyText('bank-name-{{ forloop.counter }}')">📋</button>
+                                </div>
+                            </div>
+                            <div class="info-group">
+                                <label>Nome de Usuário</label>
+                                <div class="copy-input">
+                                    <input type="text" value="{{ bank.account_holder_name }}" id="holder-{{ forloop.counter }}" readonly>
+                                    <button type="button" class="copy-icon" onclick="copyText('holder-{{ forloop.counter }}')">📋</button>
+                                </div>
+                            </div>
+                            <div class="info-group">
+                                <label>Número da Conta (IBAN)</label>
+                                <div class="copy-input">
+                                    <input type="text" value="{{ bank.IBAN }}" id="iban-{{ forloop.counter }}" readonly>
+                                    <button type="button" class="copy-icon" onclick="copyText('iban-{{ forloop.counter }}')">📋</button>
+                                </div>
+                            </div>
+                            <div class="info-group">
+                                <label>Valor do Pagamento</label>
+                                <div class="copy-input">
+                                    <input type="text" class="display-final-amount" id="amount-{{ forloop.counter }}" readonly>
+                                    <button type="button" class="copy-icon" onclick="copyText('amount-{{ forloop.counter }}')">📋</button>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                <button type="button" class="btn-main" id="to-step-4">Já fiz o pagamento</button>
+            </div>
+
+            <!-- ETAPA 4: COMPROVATIVO -->
+            <div id="step-4" class="step-content" style="display: none;">
+                <p class="upload-label">Envie o comprovativo de pagamento</p>
+                <div class="upload-box" onclick="document.getElementById('file-upload').click()">
+                    <div class="upload-icon">☁️</div>
+                    <p id="upload-text">Clique para selecionar o ficheiro</p>
+                    <input type="file" name="{{ form.proof_of_payment.name }}" id="file-upload" hidden accept="image/*,application/pdf">
+                    <p id="file-name"></p>
+                </div>
+                
+                <div class="info-group space-top-lg">
+                    <label for="payer_name">Nome do Titular da Conta Pagadora</label>
+                    <input type="text" id="payer_name" name="payer_name" placeholder="Ex: João Silva" class="simple-input" required>
+                </div>
+
+                <button type="submit" class="btn-main btn-submit">Enviar Confirmação</button>
+            </div>
+        </form>
+    {% endif %}
+</div>
+
+<style>
+    :root {
+        --bg-dark-blue: #0a1128;
+        --card-blue: #101f42;
+        --glow-blue: #00d2ff;
+        --accent-purple: #7000ff;
+        --text-light: #e2e8f0;
+        --text-muted: #718096;
+        --success: #00e676;
+        --error: #ff1744;
+    }
+
+    /* Reset anti-rolagem horizontal */
+    html, body {
+        max-width: 100%;
+        overflow-x: hidden;
+        background-color: var(--bg-dark-blue); 
+        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+        margin: 0; 
+        padding: 0;
+        color: var(--text-light);
+    }
+
+    .deposit-container {
+        width: 100%;
+        max-width: 480px;
+        margin: 0 auto;
+        background: linear-gradient(180deg, #0d1b3e 0%, #060d22 100%);
+        min-height: 100vh;
+        padding: 24px 16px;
+        box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
+        box-sizing: border-box;
+    }
+
+    .jackpay-header {
+        text-align: center;
+        margin-bottom: 28px;
+    }
+    
+    .logo-box {
+        background: rgba(0, 210, 255, 0.08);
+        border: 1px solid rgba(0, 210, 255, 0.2);
+        padding: 10px 28px;
+        display: inline-block;
+        border-radius: 12px;
+        font-weight: 700;
+        color: var(--glow-blue);
+        font-size: 24px;
+        letter-spacing: 1px;
+    }
+
+    /* Stepper fixo sem oscilações de tamanho */
+    .stepper {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 32px;
+        padding: 0 4px;
+    }
+    
+    .step-item { 
+        text-align: center; 
+        font-size: 11px; 
+        color: var(--text-muted);
+        flex-shrink: 0;
+        width: 68px;
+    }
+    
+    .step-item span { 
+        display: block; 
+        margin-top: 6px; 
+        font-weight: 500; 
+    }
+    
+    .step-item .circle {
+        width: 32px; 
+        height: 32px;
+        border-radius: 50%;
+        border: 2px solid #2d3748;
+        display: flex; 
+        align-items: center; 
+        justify-content: center;
+        margin: 0 auto;
+        background: var(--bg-dark-blue); 
+        color: var(--text-muted);
+        font-weight: 600;
+        font-size: 13px;
+        box-sizing: border-box;
+    }
+    
+    .step-item .circle.active { 
+        border-color: var(--glow-blue); 
+        background: var(--glow-blue);
+        color: var(--bg-dark-blue); 
+        box-shadow: 0 0 12px rgba(0, 210, 255, 0.4);
+    }
+    
+    .step-item .circle.checked { 
+        border-color: var(--success); 
+        background: var(--success); 
+        color: var(--bg-dark-blue); 
+    }
+    
+    .stepper .line { 
+        flex: 1; 
+        height: 2px; 
+        background: #2d3748; 
+        margin-bottom: 20px;
+    }
+    
+    .stepper .line.active {
+        background: var(--glow-blue);
+    }
+
+    /* Altura estável para evitar saltos ou quebras no ecrã ao alternar steps */
+    .step-content {
+        animation: fadeIn 0.2s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .section-label {
+        display: block;
+        font-size: 13px;
+        color: var(--glow-blue);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+    
+    .center-label {
+        text-align: center;
+        margin-bottom: 16px;
+    }
+
+    .balance-card {
+        background: linear-gradient(135deg, #162a56 0%, #0f1c3f 100%);
+        border: 1px solid rgba(255,255,255,0.05);
+        padding: 20px;
+        border-radius: 16px;
+        margin-bottom: 20px;
+    }
+    
+    .balance-card p { margin: 0; font-size: 13px; color: #a2b4cd; }
+    .balance-card h3 { margin: 5px 0 0; font-size: 26px; font-weight: 700; color: #fff; }
+
+    .amount-section {
+        background: var(--card-blue);
+        border: 1px solid rgba(255,255,255,0.03);
+        border-radius: 16px;
+        padding: 20px;
+    }
+    
+    .input-wrapper {
+        display: flex; 
+        align-items: center;
+        background: rgba(10, 17, 40, 0.7);
+        border: 1px solid rgba(0, 210, 255, 0.2);
+        border-radius: 12px; 
+        padding: 12px 16px; 
+        margin: 8px 0 20px;
+    }
+    
+    .input-wrapper:focus-within {
+        border-color: var(--glow-blue);
+    }
+    
+    .input-wrapper span { font-weight: 600; color: var(--glow-blue); font-size: 18px; margin-right: 12px; }
+    
+    .input-wrapper input { 
+        background: transparent; 
+        border: none; 
+        outline: none; 
+        width: 100%; 
+        color: #fff; 
+        font-size: 18px; 
+        font-weight: 600;
+    }
+
+    .label-small { font-size: 13px; color: var(--text-muted); margin-bottom: 12px; font-weight: 500; }
+    
+    /* Grid Responsiva e Segura para Ecrãs Pequenos */
+    .grid-amounts {
+        display: grid; 
+        grid-template-columns: repeat(4, 1fr); 
+        gap: 8px; 
+        margin: 8px 0;
+    }
+    
+    @media (max-width: 360px) {
+        .grid-amounts {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    .amount-btn {
+        border: 1px solid rgba(255,255,255,0.08); 
+        background: rgba(10, 17, 40, 0.5);
+        color: var(--text-light);
+        padding: 12px 4px; 
+        border-radius: 10px;
+        font-size: 13px; 
+        font-weight: 600;
+        cursor: pointer; 
+        text-align: center;
+        box-sizing: border-box;
+    }
+    
+    .amount-btn.active { 
+        border-color: var(--glow-blue); 
+        color: var(--glow-blue); 
+        background: rgba(0, 210, 255, 0.1);
+    }
+
+    .info-rules { 
+        margin-top: 20px; 
+        font-size: 13px; 
+        color: #b4c6ef; 
+        background: rgba(255, 23, 68, 0.04); 
+        border: 1px solid rgba(255, 23, 68, 0.15);
+        padding: 16px; 
+        border-radius: 14px; 
+    }
+    
+    .info-rules h4 { margin: 0 0 12px 0; color: #ff5252; font-size: 14px; font-weight: 600; }
+    .info-rules ul { list-style: none; padding: 0; margin: 0; }
+    .info-rules li { margin-bottom: 10px; display: flex; align-items: flex-start; line-height: 1.4; }
+    .info-rules li:last-child { margin-bottom: 0; }
+    
+    .info-rules li span { 
+        background: rgba(255, 23, 68, 0.2); 
+        color: #ff5252; 
+        width: 18px; 
+        height: 18px; 
+        border-radius: 50%; 
+        display: inline-flex; 
+        align-items: center; 
+        justify-content: center;
+        font-size: 11px; 
+        font-weight: bold;
+        margin-right: 10px; 
+        flex-shrink: 0; 
+        margin-top: 2px;
+    }
+
+    .bank-option-btn {
+        width: 100%; 
+        padding: 16px; 
+        margin-bottom: 10px;
+        background: var(--card-blue); 
+        border: 1px solid rgba(255,255,255,0.05);
+        color: var(--text-light);
+        text-align: left; 
+        border-radius: 12px; 
+        cursor: pointer;
+        font-weight: 600; 
+        font-size: 15px;
+        box-sizing: border-box;
+    }
+    
+    .bank-option-btn.active { 
+        border-color: var(--glow-blue); 
+        background: rgba(0, 210, 255, 0.08); 
+        color: var(--glow-blue);
+    }
+
+    .bank-info-card {
+        background: var(--card-blue);
+        border: 1px solid rgba(255,255,255,0.04);
+        padding: 16px;
+        border-radius: 16px;
+        margin-bottom: 20px;
+    }
+    
+    .info-group { margin-bottom: 16px; }
+    .info-group:last-child { margin-bottom: 0; }
+    .info-group label { display: block; font-size: 11px; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+    
+    /* Layout indestrutível e responsivo para inputs com botão de copiar */
+    .copy-input {
+        display: flex; 
+        align-items: center; 
+        background: rgba(10, 17, 40, 0.6);
+        border: 1px solid rgba(255,255,255,0.06); 
+        border-radius: 10px; 
+        box-sizing: border-box;
+        width: 100%;
+    }
+    
+    .copy-input input { 
+        border: none; 
+        padding: 12px; 
+        min-width: 0; /* Impede o input de estourar a largura do flex container */
+        flex: 1; 
+        outline: none; 
+        font-size: 14px; 
+        background: transparent; 
+        color: #fff;
+        font-weight: 500;
+    }
+    
+    .copy-icon { 
+        background: rgba(0, 210, 255, 0.12); 
+        color: var(--glow-blue);
+        border: none; 
+        width: 46px;
+        height: 44px;
+        flex-shrink: 0; /* Garante que o botão NUNCA encolha ou fique oculto */
+        cursor: pointer; 
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0 9px 9px 0;
+    }
+
+    .upload-label { text-align: center; color: var(--text-light); font-size: 14px; margin-bottom: 16px; }
+    
+    .upload-box {
+        border: 2px dashed rgba(0, 210, 255, 0.25); 
+        background: rgba(16, 31, 66, 0.4);
+        border-radius: 16px;
+        padding: 32px 16px; 
+        text-align: center; 
+        cursor: pointer;
+    }
+    
+    .upload-icon { font-size: 38px; color: var(--glow-blue); margin-bottom: 8px; }
+    #upload-text { margin: 0; font-size: 14px; color: #a2b4cd; }
+    #file-name { font-size: 12px; color: var(--glow-blue); margin-top: 8px; font-weight: bold; word-break: break-all; }
+    
+    .simple-input {
+        width: 100%; 
+        border: 1px solid rgba(255,255,255,0.08); 
+        border-radius: 12px;
+        padding: 14px; 
+        box-sizing: border-box; 
+        background: rgba(10, 17, 40, 0.6);
+        color: #fff;
+        font-size: 15px;
+        outline: none;
+    }
+    
+    .simple-input:focus { border-color: var(--glow-blue); }
+
+    .btn-main {
+        width: 100%; 
+        background: linear-gradient(90deg, #0052d4 0%, #4364f7 50%, #6fb1fc 100%);
+        color: white;
+        border: none; 
+        padding: 15px; 
+        border-radius: 12px;
+        font-size: 15px; 
+        font-weight: 600; 
+        cursor: pointer; 
+        margin-top: 12px;
+        text-align: center;
+        display: block;
+        box-sizing: border-box;
+        text-decoration: none;
+    }
+    
+    .btn-submit {
+        background: linear-gradient(135deg, #00d2ff 0%, #0066ff 100%);
+        box-shadow: 0 4px 12px rgba(0, 210, 255, 0.3);
+    }
+    
+    .btn-main:disabled { 
+        background: #1e293b !important; 
+        color: #475569 !important;
+        border: 1px solid #334155;
+        box-shadow: none !important;
+        cursor: not-allowed; 
+    }
+
+    .space-top { margin-top: 16px; }
+    .space-top-lg { margin-top: 20px; }
+
+    .success-screen { text-align: center; padding: 32px 8px; }
+    .success-icon { 
+        width: 68px; height: 68px; 
+        background: rgba(0, 230, 118, 0.15); 
+        color: var(--success);
+        border: 1px solid rgba(0, 230, 118, 0.3);
+        border-radius: 50%; 
+        display: flex; align-items: center; justify-content: center;
+        font-size: 32px; margin: 0 auto 20px;
+    }
+    .success-screen h2 { font-size: 20px; font-weight: 700; margin-bottom: 12px; color: #fff; }
+    .success-screen p { color: var(--text-muted); font-size: 14px; line-height: 1.5; margin-bottom: 24px; }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const amountBtns = document.querySelectorAll('.amount-btn');
+        const bankBtns = document.querySelectorAll('.bank-option-btn');
+        const next1 = document.getElementById('to-step-2');
+        const next2 = document.getElementById('to-step-3');
+        const amountInput = document.getElementById('id_amount');
+        const bankInput = document.getElementById('id_selected_bank');
+        const manualAmount = document.getElementById('manual-amount');
+
+        // Atualização de valor manual
+        manualAmount.addEventListener('input', (e) => {
+            const val = e.target.value;
+            amountBtns.forEach(b => b.classList.remove('active'));
+            if (val && parseFloat(val) > 0) {
+                amountInput.value = val;
+                document.querySelectorAll('.display-final-amount').forEach(el => el.value = parseFloat(val).toFixed(2));
+                next1.disabled = false;
+            } else {
+                next1.disabled = true;
+            }
+        });
+
+        // Botões rápidos de valor
+        amountBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                amountBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                manualAmount.value = '';
+                amountInput.value = btn.dataset.value;
+                document.querySelectorAll('.display-final-amount').forEach(el => el.value = parseFloat(btn.dataset.value).toFixed(2));
+                next1.disabled = false;
+            });
+        });
+
+        // Step 1 -> 2
+        next1.addEventListener('click', () => {
+            goToStep(2);
+            updateStepper(2);
+        });
+
+        // Seleção de Banco
+        bankBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                bankBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                bankInput.value = btn.dataset.bankId;
+                next2.disabled = false;
+            });
+        });
+
+        // Step 2 -> 3
+        next2.addEventListener('click', () => {
+            const bankId = bankInput.value;
+            document.querySelectorAll('.bank-info-card').forEach(card => card.style.display = 'none');
+            document.getElementById(`details-${bankId}`).style.display = 'block';
+            goToStep(3);
+            updateStepper(2);
+        });
+
+        // Step 3 -> 4
+        document.getElementById('to-step-4').addEventListener('click', () => {
+            goToStep(4);
+            updateStepper(3);
+        });
+
+        // Upload Preview
+        document.getElementById('file-upload').addEventListener('change', function() {
+            if(this.files[0]) {
+                document.getElementById('file-name').innerText = "Ficheiro: " + this.files[0].name;
+                document.getElementById('upload-text').innerText = "Alterar ficheiro";
+            }
+        });
+
+        function goToStep(step) {
+            document.querySelectorAll('.step-content').forEach(el => el.style.display = 'none');
+            document.getElementById(`step-${step}`).style.display = 'block';
+        }
+
+        function updateStepper(activeStep) {
+            const dots = [document.getElementById('dot-1'), document.getElementById('dot-2'), document.getElementById('dot-3')];
+            const lines = [document.getElementById('line-1'), document.getElementById('line-2')];
+            
+            dots.forEach((dot, idx) => {
+                const stepNum = idx + 1;
+                if (stepNum < activeStep) {
+                    dot.className = "circle checked";
+                    dot.innerHTML = "✓";
+                    if(lines[idx]) lines[idx].classList.add('active');
+                } else if (stepNum === activeStep) {
+                    dot.className = "circle active";
+                    dot.innerHTML = stepNum;
+                } else {
+                    dot.className = "circle";
+                    dot.innerHTML = stepNum;
+                }
+            });
+        }
+    });
+
+    function copyText(id) {
+        const copyInput = document.getElementById(id);
+        copyInput.select();
+        copyInput.setSelectionRange(0, 99999);
+        navigator.clipboard.writeText(copyInput.value).then(() => {
+            const btn = copyInput.nextElementSibling;
+            const originalIcon = btn.innerText;
+            btn.innerText = "✓";
+            setTimeout(() => { btn.innerText = originalIcon; }, 1500);
+        }).catch(() => {
+            alert("Erro ao copiar dados.");
+        });
+    }
+</script>
+{% endblock %}

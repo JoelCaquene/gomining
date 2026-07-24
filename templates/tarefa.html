@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Monitor de Mineração{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+<input type="hidden" id="django-csrf-token" value="{{ csrf_token }}">
+
+<div class="monitor-container">
+    <div class="monitor-header">
+        <div class="pulse-box">
+            <span class="pulse-dot"></span>
+            <h2>PROCESSAMENTO AUTOMÁTICO</h2>
+        </div>
+    </div>
+
+    {% if has_active_plans %}
+        <div class="grid-monitors">
+            {% for monitor in active_monitors %}
+                <div class="monitor-card {% if monitor.is_locked %}disabled-card{% endif %}" id="card-{{ monitor.user_level_id }}">
+                    
+                    <!-- Topo Ultra Compacto -->
+                    <div class="card-top">
+                        <span class="badge-type {{ monitor.category }}">
+                            {{ monitor.category_display|upper }}
+                        </span>
+                        <span class="level-name">VIP {{ monitor.name }}</span>
+                        <span class="status-tag {% if monitor.is_locked %}status-locked{% endif %}">
+                            {% if monitor.is_locked %}BLOQUEADO{% else %}ATIVO{% endif %}
+                        </span>
+                    </div>
+
+                    <!-- Métricas Financeiras Diretas -->
+                    <div class="metrics-row">
+                        <div class="metric-item">
+                            <span class="m-label">Investido</span>
+                            <span class="m-value">KZ {{ monitor.deposit_value }}</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="m-label">Diário</span>
+                            <span class="m-value text-green">+{{ monitor.daily_gain }}</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="m-label">Progresso</span>
+                            <span class="m-value" id="days-txt-{{ monitor.user_level_id }}">{{ monitor.days_passed }}/{{ monitor.cycle_days }}d</span>
+                        </div>
+                    </div>
+
+                    <!-- Barra de Progresso Fina -->
+                    <div class="bar-bg">
+                        <div class="bar-fill" id="bar-{{ monitor.user_level_id }}" style="width: {% widthratio monitor.days_passed monitor.cycle_days 100 %}%"></div>
+                    </div>
+
+                    <!-- Rodapé de Controle: Saldo Acumulado e Cronômetro Lado a Lado -->
+                    <div class="card-footer">
+                        <div class="footer-balance">
+                            <span class="m-label">Acumulado</span>
+                            <span class="acc-val" id="acc-{{ monitor.user_level_id }}">KZ {{ monitor.accumulated_profit }}</span>
+                        </div>
+                        <div class="footer-timer">
+                            <div class="cronometro-display" id="timer-{{ monitor.user_level_id }}">24:00:00</div>
+                        </div>
+                    </div>
+
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="no-plans">
+            <i class="fa-solid fa-server-slash"></i>
+            <h3>Nenhum Plano Ativo</h3>
+            <p>Adquira um plano na aba de níveis para iniciar os seus rendimentos.</p>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const csrfToken = document.getElementById('django-csrf-token').value;
+    
+    const monitors = [
+        {% for m in active_monitors %}
+        {
+            userLevelId: "{{ m.user_level_id|escapejs }}",
+            isReady: {{ m.is_ready|yesno:"true,false" }},
+            isLocked: {{ m.is_locked|yesno:"true,false" }},
+            category: "{{ m.category|escapejs }}",
+            cycleDays: parseInt("{{ m.cycle_days }}") || 1,
+            remainingSeconds: parseInt("{{ m.remaining_seconds|default:86400 }}")
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+
+    monitors.forEach(monitor => {
+        const timerEl = document.getElementById(`timer-${monitor.userLevelId}`);
+        if (!timerEl) return;
+        
+        if (monitor.isLocked) {
+            timerEl.textContent = "BLOQUEADO";
+            timerEl.classList.add("text-red");
+            return;
+        }
+
+        let totalSeconds = monitor.remainingSeconds; 
+
+        function updateCronometro() {
+            if (totalSeconds <= 0) {
+                timerEl.textContent = "ATUALIZANDO...";
+                timerEl.classList.remove("text-green");
+                
+                // Evita chamadas contínuas imediatas travando em 30 segundos temporariamente durante o processamento
+                totalSeconds = 30;
+
+                fetch("{% url 'process_level_task' %}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({ user_level_id: monitor.userLevelId })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        totalSeconds = 86400;
+                        if (data.accumulated_profit !== undefined) {
+                            document.getElementById(`acc-${monitor.userLevelId}`).textContent = `KZ ${data.accumulated_profit}`;
+                        }
+                        if (data.days_processed !== undefined) {
+                            document.getElementById(`days-txt-${monitor.userLevelId}`).textContent = `${data.days_processed}/${monitor.cycleDays}d`;
+                            const progressPercent = (data.days_processed / monitor.cycleDays) * 100;
+                            document.getElementById(`bar-${monitor.userLevelId}`).style.width = `${progressPercent}%`;
+                        }
+                    } else {
+                        totalSeconds = data.remaining_seconds ? data.remaining_seconds : 30;
+                    }
+                })
+                .catch(() => {
+                    totalSeconds = 30; 
+                });
+                return;
+            }
+
+            if (totalSeconds < 5) {
+                timerEl.textContent = "PRONTO";
+                timerEl.classList.add("text-green");
+            } else {
+                timerEl.classList.remove("text-green");
+                const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
+                const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
+                const seconds = String(totalSeconds % 60).padStart(2, '0');
+                timerEl.textContent = `${hours}:${minutes}:${seconds}`;
+            }
+            
+            totalSeconds--;
+        }
+
+        setInterval(updateCronometro, 1000);
+        updateCronometro();
+    });
+});
+</script>
+
+<style>
+    :root {
+        --bg: #060913;
+        --card: #0d1222;
+        --border: #1e2942;
+        --green: #00ff88;
+        --yellow: #ffcc00;
+        --red: #ff4a4a;
+        --text: #ffffff;
+        --dim: #798aa3;
+    }
+
+    .monitor-container { width: 100%; max-width: 440px; margin: 0 auto; padding: 10px; font-family: 'Inter', sans-serif; color: var(--text); box-sizing: border-box; }
+    .monitor-header { text-align: center; margin-bottom: 15px; }
+    .pulse-box { display: flex; align-items: center; justify-content: center; gap: 6px; }
+    .pulse-dot { width: 6px; height: 6px; background: var(--green); border-radius: 50%; box-shadow: 0 0 8px var(--green); animation: pulseGlow 2s infinite; }
+    .monitor-header h2 { font-size: 11px; font-weight: 700; margin: 0; letter-spacing: 0.8px; color: var(--dim); }
+
+    .grid-monitors { display: flex; flex-direction: column; gap: 10px; }
+    .monitor-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+    
+    .card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; gap: 6px; }
+    .badge-type { font-family: 'JetBrains Mono', monospace; font-size: 8px; font-weight: 700; padding: 2px 6px; border-radius: 3px; text-transform: uppercase; }
+    .badge-type.long_term { background: rgba(0, 255, 136, 0.08); color: var(--green); border: 1px solid rgba(0, 255, 136, 0.2); }
+    .badge-type.short_term { background: rgba(255, 204, 0, 0.08); color: var(--yellow); border: 1px solid rgba(255, 204, 0, 0.2); }
+    .badge-type.activities { background: rgba(255, 74, 74, 0.08); color: var(--red); border: 1px solid rgba(255, 74, 74, 0.2); }
+    
+    .level-name { font-size: 13px; font-weight: 700; flex-grow: 1; text-align: left; margin-left: 4px; }
+    .status-tag { font-size: 9px; font-weight: 700; color: var(--green); }
+    .status-locked { color: var(--red); }
+
+    .metrics-row { display: flex; justify-content: space-between; background: #070b16; padding: 8px 10px; border-radius: 6px; border: 1px solid #131a2e; margin-bottom: 8px; }
+    .metric-item { display: flex; flex-direction: column; }
+    .metric-item:nth-child(2) { align-items: center; }
+    .metric-item:nth-child(3) { align-items: flex-end; }
+    
+    .m-label { font-size: 8px; color: var(--dim); text-transform: uppercase; margin-bottom: 1px; letter-spacing: 0.3px; }
+    .m-value { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; }
+    
+    .bar-bg { width: 100%; height: 4px; background: #131a2e; border-radius: 2px; overflow: hidden; margin-bottom: 10px; }
+    .bar-fill { height: 100%; background: var(--green); box-shadow: 0 0 6px var(--green); transition: width 0.4s ease; }
+
+    .card-footer { display: flex; justify-content: space-between; align-items: center; background: #0a0f1d; padding: 8px 10px; border-radius: 6px; border: 1px solid #131a2e; }
+    .footer-balance { display: flex; flex-direction: column; }
+    .acc-val { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; color: #ffffff; }
+    
+    .cronometro-display { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; color: var(--yellow); letter-spacing: 0.5px; }
+    
+    .text-green { color: var(--green) !important; }
+    .text-red { color: var(--red) !important; }
+
+    .disabled-card { opacity: 0.6; filter: grayscale(20%); border: 1px dashed rgba(255, 74, 74, 0.4); }
+    .no-plans { text-align: center; padding: 30px 15px; background: var(--card); border-radius: 10px; border: 1px dashed var(--border); }
+    .no-plans i { font-size: 24px; color: var(--dim); margin-bottom: 8px; }
+    .no-plans h3 { font-size: 13px; margin: 0 0 4px 0; }
+    .no-plans p { font-size: 10px; color: var(--dim); margin: 0; line-height: 1.3; }
+
+    @keyframes pulseGlow {
+        0% { transform: scale(0.95); opacity: 0.5; }
+        50% { transform: scale(1); opacity: 1; }
+        100% { transform: scale(0.95); opacity: 0.5; }
+    }
+</style>
+{% endblock %}

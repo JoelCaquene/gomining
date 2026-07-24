@@ -1,0 +1,518 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Grupo da Comunidade{% endblock %}
+
+{% block content %}
+<div class="whatsapp-container">
+    <!-- BARRA SUPERIOR DO GRUPO / PERFIL DO USUÁRIO -->
+    <div class="wa-header">
+        <div class="wa-header-left">
+            <!-- BOTÃO VOLTAR -->
+            <a href="{% url 'home' %}" class="wa-back-btn" title="Voltar">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="#aebac1">
+                    <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+                </svg>
+            </a>
+
+            <!-- Container de Foto de Perfil com Tamanho Estritamente Controlado -->
+            <form method="POST" action="" enctype="multipart/form-data" id="avatar-form">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="update_profile_picture">
+                
+                <label for="id_profile_picture" class="profile-avatar-wrapper" title="Clique para alterar sua foto de perfil">
+                    {% if user.profile_picture %}
+                        <img src="{{ user.profile_picture.url }}" alt="Foto" class="wa-header-avatar">
+                    {% else %}
+                        <div class="wa-avatar-placeholder">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="#8696a0">
+                                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                            </svg>
+                        </div>
+                    {% endif %}
+                    <div class="camera-badge">📷</div>
+                </label>
+
+                <input type="file" id="id_profile_picture" name="profile_picture" accept="image/*" onchange="document.getElementById('avatar-form').submit();" style="display: none;">
+            </form>
+
+            <div class="wa-header-info">
+                <span class="wa-group-title">Grupo da Comunidade</span>
+                <span class="wa-user-status">Seu ID: <strong>{{ user.phone_number }}</strong></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ÁREA DE MENSAGENS COM ATADURA DO TEXTURA DO WHATSAPP -->
+    <div class="wa-chat-body">
+        {% for post in posts %}
+            <div class="wa-message-row {% if post.user == user %}outgoing{% else %}incoming{% endif %}">
+                <div class="wa-msg-avatar">
+                    {% if post.user.profile_picture %}
+                        <img src="{{ post.user.profile_picture.url }}" alt="U">
+                    {% else %}
+                        <div class="msg-avatar-placeholder">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="#8696a0">
+                                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                            </svg>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="wa-bubble">
+                    <div class="wa-author-id">
+                        {% if post.user == user %}
+                            Você ({{ post.user.phone_number }})
+                        {% else %}
+                            +{{ post.user.phone_number }}
+                        {% endif %}
+                    </div>
+                    
+                    {% if post.content %}
+                        <p class="wa-text">{{ post.content }}</p>
+                    {% endif %}
+
+                    {% if post.image %}
+                        <div class="wa-img-wrapper">
+                            <img src="{{ post.image.url }}" alt="Imagem" class="wa-img">
+                        </div>
+                    {% endif %}
+
+                    <span class="wa-timestamp">{{ post.created_at|date:"H:i" }}</span>
+                </div>
+            </div>
+        {% empty %}
+            <div class="wa-empty-chat">
+                <p>Nenhuma mensagem no grupo ainda. Envie a primeira mensagem abaixo!</p>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- BARRA DE DIGITAÇÃO E ENVIO -->
+    <div class="wa-footer">
+        <div id="file-preview-bar" class="wa-file-indicator" style="display: none;">
+            <span id="file-chosen-name"></span>
+            <button type="button" onclick="clearFileSelection()" class="clear-file-btn">✕</button>
+        </div>
+
+        <form method="POST" action="" enctype="multipart/form-data" class="wa-input-form">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="create_post">
+            
+            <label for="post_image_input" class="wa-attach-btn" title="Adicionar Imagem à Publicação">
+                📎 <span class="attach-label">Foto</span>
+            </label>
+            <input type="file" id="post_image_input" name="image" accept="image/*" style="display:none;" onchange="updateFileName(this)">
+
+            <input type="text" name="content" id="wa-text-input" placeholder="Escreva uma mensagem..." autocomplete="off">
+
+            <button type="submit" class="wa-send-btn" title="Enviar Mensagem">
+                ➤
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+    function updateFileName(input) {
+        const previewBar = document.getElementById('file-preview-bar');
+        const indicator = document.getElementById('file-chosen-name');
+        if (input.files && input.files[0]) {
+            indicator.innerText = "🖼️ Imagem selecionada: " + input.files[0].name;
+            previewBar.style.display = "flex";
+            document.getElementById('wa-text-input').removeAttribute('required');
+        } else {
+            clearFileSelection();
+        }
+    }
+
+    function clearFileSelection() {
+        const input = document.getElementById('post_image_input');
+        const previewBar = document.getElementById('file-preview-bar');
+        if(input) input.value = "";
+        if(previewBar) previewBar.style.display = "none";
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        const chatBody = document.querySelector(".wa-chat-body");
+        if (chatBody) {
+            chatBody.scrollTop = chatBody.scrollHeight;
+        }
+    });
+</script>
+
+<style>
+    html, body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        max-width: 100%;
+        overflow: hidden !important; /* Desativa rolagem global */
+        background-color: #0b141a;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        box-sizing: border-box;
+    }
+
+    *, *:before, *:after {
+        box-sizing: inherit;
+    }
+
+    .whatsapp-container {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        height: 100dvh;
+        width: 100%;
+        max-width: 100%;
+        margin: 0 auto;
+        background-color: #0b141a;
+        position: fixed; /* Trava o container fixo na tela */
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        overflow: hidden;
+    }
+
+    /* Header */
+    .wa-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background-color: #202c33;
+        padding: 8px 12px;
+        color: #e9edef;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        z-index: 10;
+        width: 100%;
+        height: 60px;
+        flex-shrink: 0; /* Impede encolhimento */
+    }
+
+    .wa-header-left {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+    }
+
+    /* Botão Voltar */
+    .wa-back-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 4px;
+        border-radius: 50%;
+        text-decoration: none;
+        color: #aebac1;
+        transition: background-color 0.2s;
+        margin-right: 2px;
+    }
+
+    .wa-back-btn:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Perfil */
+    #avatar-form {
+        margin: 0;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        flex-shrink: 0;
+    }
+
+    .profile-avatar-wrapper {
+        position: relative;
+        width: 40px !important;
+        height: 40px !important;
+        max-width: 40px !important;
+        max-height: 40px !important;
+        min-width: 40px !important;
+        min-height: 40px !important;
+        border-radius: 50% !important;
+        cursor: pointer;
+        flex-shrink: 0 !important;
+        overflow: hidden !important;
+        display: block;
+    }
+
+    .wa-header-avatar {
+        width: 100% !important;
+        height: 100% !important;
+        max-width: 100% !important;
+        max-height: 100% !important;
+        object-fit: cover !important;
+        border-radius: 50% !important;
+        display: block !important;
+    }
+
+    .wa-avatar-placeholder {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background-color: #111b21;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .camera-badge {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        background: #00a884;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.5rem;
+        border: 1px solid #202c33;
+        z-index: 2;
+    }
+
+    .wa-header-info {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+    }
+
+    .wa-group-title {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #e9edef;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .wa-user-status {
+        font-size: 0.75rem;
+        color: #8696a0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Chat Body - ÚNICA ÁREA QUE ROLA */
+    .wa-chat-body {
+        flex: 1;
+        overflow-y: auto !important; /* Permite rolar apenas aqui */
+        overflow-x: hidden;
+        padding: 12px 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        width: 100%;
+        background-color: #0b141a;
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 80 80"><path fill="%23111b21" fill-opacity="0.6" d="M14 16a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm52 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM14 56a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm52 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM40 36a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm0 40a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/></svg>');
+    }
+
+    .wa-message-row {
+        display: flex;
+        align-items: flex-end;
+        gap: 6px;
+        max-width: 88%;
+    }
+
+    .wa-message-row.outgoing {
+        align-self: flex-end;
+        flex-direction: row-reverse;
+    }
+
+    .wa-message-row.incoming {
+        align-self: flex-start;
+    }
+
+    .wa-msg-avatar {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        overflow: hidden;
+        flex-shrink: 0;
+        background-color: #202c33;
+    }
+
+    .wa-msg-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .msg-avatar-placeholder {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #111b21;
+    }
+
+    .wa-bubble {
+        background-color: #202c33;
+        color: #e9edef;
+        padding: 6px 10px 16px 10px;
+        border-radius: 8px;
+        position: relative;
+        word-break: break-word;
+        box-shadow: 0 1px 0.5px rgba(0,0,0,0.13);
+        max-width: 100%;
+    }
+
+    .wa-message-row.outgoing .wa-bubble {
+        background-color: #005c4b;
+    }
+
+    .wa-author-id {
+        font-size: 0.72rem;
+        font-weight: bold;
+        color: #53bdeb;
+        margin-bottom: 2px;
+    }
+
+    .wa-message-row.outgoing .wa-author-id {
+        color: #25d366;
+    }
+
+    .wa-text {
+        margin: 0;
+        font-size: 0.9rem;
+        line-height: 1.3;
+    }
+
+    .wa-img-wrapper {
+        margin-top: 5px;
+        border-radius: 6px;
+        overflow: hidden;
+        max-width: 100%;
+    }
+
+    .wa-img {
+        width: 100%;
+        max-height: 250px;
+        object-fit: cover;
+        display: block;
+    }
+
+    .wa-timestamp {
+        position: absolute;
+        bottom: 2px;
+        right: 6px;
+        font-size: 0.62rem;
+        color: #8696a0;
+    }
+
+    .wa-message-row.outgoing .wa-timestamp {
+        color: #aebac1;
+    }
+
+    .wa-empty-chat {
+        text-align: center;
+        margin: auto;
+        color: #8696a0;
+        font-size: 0.85rem;
+        background: #182229;
+        padding: 10px 14px;
+        border-radius: 8px;
+        max-width: 90%;
+    }
+
+    /* Footer - FIXO NO FUNDO */
+    .wa-footer {
+        background-color: #202c33;
+        padding: 8px 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        width: 100%;
+        flex-shrink: 0; /* Impede encolhimento */
+        z-index: 10;
+    }
+
+    .wa-input-form {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        width: 100%;
+    }
+
+    .wa-attach-btn {
+        background: #2a3942;
+        border: 1px solid #00a884;
+        border-radius: 20px;
+        color: #25d366;
+        padding: 6px 10px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        flex-shrink: 0;
+    }
+
+    #wa-text-input {
+        flex: 1;
+        min-width: 0;
+        background-color: #2a3942;
+        border: none;
+        outline: none;
+        color: #e9edef;
+        padding: 9px 12px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+    }
+
+    #wa-text-input::placeholder {
+        color: #8696a0;
+    }
+
+    .wa-send-btn {
+        background-color: #00a884;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 38px;
+        height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+
+    .wa-file-indicator {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background-color: #111b21;
+        border-left: 3px solid #00a884;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        color: #25d366;
+    }
+
+    .clear-file-btn {
+        background: transparent;
+        border: none;
+        color: #8696a0;
+        cursor: pointer;
+        font-size: 0.85rem;
+    }
+
+    @media (min-width: 768px) {
+        .whatsapp-container {
+            max-width: 750px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 1px solid #222d34;
+            border-right: 1px solid #222d34;
+        }
+    }
+</style>
+{% endblock %}
